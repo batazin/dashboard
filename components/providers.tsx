@@ -7,7 +7,7 @@ import { SocketProvider } from "@/lib/socket"
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" storageKey="theme">
+    <ThemeProvider attribute="class" defaultTheme="light" forcedTheme="light" storageKey="theme">
       <SessionProvider>
         <SocketProvider>
           {children}
