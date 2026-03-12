@@ -1,0 +1,241 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== AUTH MODELS ====================
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ==================== USER MODEL ====================
+
+enum Role {
+  ADMIN
+  REQUESTER
+  PROFESSIONAL
+}
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  role           Role      @default(REQUESTER)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  professional   Professional?
+  
+  // Orders created by this user (requester)
+  ordersCreated  Order[]   @relation("OrderRequester")
+  
+  // Messages sent by this user
+  messages       Message[]
+  
+  // Status changes made by this user
+  statusChanges  StatusHistory[]
+  
+  // Notifications for this user
+  notifications  Notification[]
+}
+
+// ==================== PROFESSIONAL MODEL ====================
+
+enum ProfessionalStatus {
+  AVAILABLE
+  UNAVAILABLE
+  BUSY
+}
+
+model Professional {
+  id          String             @id @default(cuid())
+  userId      String             @unique
+  specialty   String
+  skills      String[]
+  status      ProfessionalStatus @default(AVAILABLE)
+  // When this professional is unavailable they can set another professional
+  // to take new orders temporarily. `substituteProfessionalId` stores the
+  // id of the substitute and `substituteUntil` optionaly limits the period.
+  substituteProfessionalId String?
+  substituteUntil           DateTime?
+  bio         String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Orders assigned to this professional
+  orders      Order[]            @relation("OrderProfessional")
+}
+
+// ==================== ORDER MODEL ====================
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum OrderStatus {
+  NEW
+  IN_ANALYSIS
+  IN_PROGRESS
+  WAITING_CLIENT
+  FINISHED
+  CANCELLED
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  title         String
+  description   String        @db.Text
+  priority      Priority      @default(MEDIUM)
+  status        OrderStatus   @default(NEW)
+  
+  // Feedback when finished
+  feedback      String?       @db.Text
+  rating        Int?          // 1-5 stars
+  finishedAt    DateTime?
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  // Relations
+  requesterId   String
+  requester     User          @relation("OrderRequester", fields: [requesterId], references: [id])
+  
+  professionalId String?
+  professional   Professional? @relation("OrderProfessional", fields: [professionalId], references: [id])
+  
+  tags          Tag[]
+  attachments   Attachment[]
+  messages      Message[]
+  statusHistory StatusHistory[]
+  notifications Notification[]
+}
+
+// ==================== TAG MODEL ====================
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+}
+
+// ==================== ATTACHMENT MODEL ====================
+
+model Attachment {
+  id          String   @id @default(cuid())
+  filename    String
+  originalName String
+  mimeType    String
+  size        Int      // bytes
+  url         String
+  createdAt   DateTime @default(now())
+
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ==================== MESSAGE MODEL (Chat) ====================
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ==================== STATUS HISTORY MODEL ====================
+
+model StatusHistory {
+  id          String      @id @default(cuid())
+  fromStatus  OrderStatus?
+  toStatus    OrderStatus
+  observation String?     @db.Text
+  createdAt   DateTime    @default(now())
+
+  orderId     String
+  order       Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  changedById String
+  changedBy   User        @relation(fields: [changedById], references: [id])
+}
+
+// ==================== NOTIFICATION MODEL ====================
+
+enum NotificationType {
+  ORDER_ASSIGNED
+  ORDER_STATUS_CHANGED
+  NEW_MESSAGE
+  ORDER_FINISHED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orderId   String?
+  order     Order?           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
