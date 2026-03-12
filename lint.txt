@@ -1,0 +1,235 @@
+﻿
+> projeto-dash@0.1.0 lint
+> eslint
+
+
+B:\Projetos freelancer\dashboard\__tests__\components\file-upload.test.tsx
+  1:26  warning  'fireEvent' is defined but never used            @typescript-eslint/no-unused-vars
+  6:7   warning  'mockOnDrop' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  8:25  warning  'options' is defined but never used              @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\__tests__\components\order-chat.test.tsx
+  1:26  warning  'fireEvent' is defined but never used  @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\orders\[id]\page.tsx
+   21:10   warning  'Input' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+   47:3    warning  'priorityLabels' is defined but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   48:3    warning  'formatFileSize' is defined but never used                                                                                                                                                                                                                                      @typescript-eslint/no-unused-vars
+   63:38   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+   71:62   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+   74:52   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  102:14   warning  'error' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  116:6    warning  React Hook useEffect has a missing dependency: 'fetchOrder'. Either include it or remove the dependency array                                                                                                                                                                   react-hooks/exhaustive-deps
+  128:46   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  135:6    warning  React Hook useEffect has a missing dependency: 'order?.tags'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSelectedTags' needs the current value of 'order.tags'                                   react-hooks/exhaustive-deps
+  157:6    warning  React Hook useEffect has a missing dependency: 'order?.professional?.id'. Either include it or remove the dependency array. You can also replace multiple useState variables with useReducer if 'setSelectedProfessionalId' needs the current value of 'order.professional.id'  react-hooks/exhaustive-deps
+  182:14   warning  'error' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  213:14   warning  'error' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  239:14   warning  'error' is defined but never used                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  250:47   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  251:21   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  258:21   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  260:48   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  539:43   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  692:156  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  692:173  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  693:81   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  693:98   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+  717:36   warning  'err' is defined but never used                                                                                                                                                                                                                                                 @typescript-eslint/no-unused-vars
+  790:54   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                        @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\orders\page.tsx
+   6:18  warning  'Filter' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+  34:9   warning  'router' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  88:6   warning  React Hook useEffect has a missing dependency: 'fetchOrders'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\page.tsx
+  25:20  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  34:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\professionals\[id]\page.tsx
+   39:52   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   55:60   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+   79:16   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+   82:14   warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+   96:6    warning  React Hook useEffect has a missing dependency: 'fetchProfessional'. Either include it or remove the dependency array                                                                                                                                                                     react-hooks/exhaustive-deps
+  101:22   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  117:22   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  121:18   warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  125:20   warning  '_' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  134:30   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  142:14   warning  'error' is defined but never used                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  304:19   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  356:76   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  356:118  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  475:52   error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\professionals\page.tsx
+   10:29  warning  'CardHeader' is defined but never used                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   10:41  warning  'CardTitle' is defined but never used                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   96:6   warning  React Hook useEffect has a missing dependency: 'fetchProfessionals'. Either include it or remove the dependency array                                                                                                                                                                    react-hooks/exhaustive-deps
+  149:22  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                 @typescript-eslint/no-explicit-any
+  153:18  warning  'e' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  154:57  warning  '_' is defined but never used                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  359:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\profile\page.tsx
+   23:26  warning  'update' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   30:52  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   36:60  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   49:59  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   82:24  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+   97:24  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  101:20  warning  'e' is defined but never used                @typescript-eslint/no-unused-vars
+  105:22  warning  '_' is defined but never used                @typescript-eslint/no-unused-vars
+  122:14  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  255:85  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\(dashboard)\reports\page.tsx
+   75:17  warning  'session' is assigned a value but never used                                                                     @typescript-eslint/no-unused-vars
+  106:14  warning  'error' is defined but never used                                                                                @typescript-eslint/no-unused-vars
+  119:6   warning  React Hook useEffect has a missing dependency: 'fetchReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+B:\Projetos freelancer\dashboard\app\api\dashboard\route.ts
+  25:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  36:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\orders\[id]\route.ts
+    5:29  warning  'orderFinishSchema' is defined but never used  @typescript-eslint/no-unused-vars
+  102:23  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\orders\route.ts
+   29:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   47:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  195:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\professionals\[id]\route.ts
+  64:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  93:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\professionals\route.ts
+   31:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  106:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\reports\route.ts
+   19:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   28:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   36:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  122:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  143:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  149:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  169:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  180:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  203:31  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\reports\tags\route.ts
+  19:22  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  28:27  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\socket\ping\route.ts
+  12:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\api\socket\start\route.ts
+  18:12  warning  'err' is defined but never used           @typescript-eslint/no-unused-vars
+  33:17  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\app\auth\login\page.tsx
+  47:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\components\layout\notification-bell.tsx
+    6:16  warning  'Check' is defined but never used                                                                                                                                             @typescript-eslint/no-unused-vars
+   50:9   warning  'POLL_STOP_AFTER_MS' is assigned a value but never used                                                                                                                       @typescript-eslint/no-unused-vars
+  124:23  error    Unexpected any. Specify a different type                                                                                                                                      @typescript-eslint/no-explicit-any
+  128:16  warning  'e' is defined but never used                                                                                                                                                 @typescript-eslint/no-unused-vars
+  133:31  error    Unexpected any. Specify a different type                                                                                                                                      @typescript-eslint/no-explicit-any
+  161:54  warning  'e' is defined but never used                                                                                                                                                 @typescript-eslint/no-unused-vars
+  166:21  error    Unexpected any. Specify a different type                                                                                                                                      @typescript-eslint/no-explicit-any
+  202:14  warning  'e' is defined but never used                                                                                                                                                 @typescript-eslint/no-unused-vars
+  229:21  error    Unexpected any. Specify a different type                                                                                                                                      @typescript-eslint/no-explicit-any
+  259:6   warning  React Hook useEffect has missing dependencies: 'CACHE_TTL_MS', 'fetchNotifications', 'saveCache', and 'serverReachable'. Either include them or remove the dependency array   react-hooks/exhaustive-deps
+  265:54  error    Unexpected any. Specify a different type                                                                                                                                      @typescript-eslint/no-explicit-any
+  334:6   warning  React Hook useEffect has missing dependencies: 'notifications.length', 'playSound', 'session.user.id', and 'unreadCount'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  358:6   warning  React Hook useEffect has a missing dependency: 'saveCache'. Either include it or remove the dependency array                                                                  react-hooks/exhaustive-deps
+
+B:\Projetos freelancer\dashboard\components\layout\sidebar.tsx
+  32:10  warning  'ThemeToggle' is defined but never used  @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\components\layout\theme-toggle.tsx
+  10:11  warning  'theme' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  13:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+B:\Projetos freelancer\dashboard\components\layout\theme-toggle.tsx:13:5
+  11 |
+  12 |   useEffect(() => {
+> 13 |     setMounted(true)
+     |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  14 |   }, [])
+  15 |
+  16 |   // Manual fallback to ensure theme class is applied correctly  react-hooks/set-state-in-effect
+
+B:\Projetos freelancer\dashboard\components\orders\file-upload.tsx
+   6:64  warning  'ALLOWED_FILE_TYPES' is defined but never used  @typescript-eslint/no-unused-vars
+  11:35  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+  12:25  error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\components\orders\order-chat.tsx
+   41:68  warning  'sendSocketMessage' is assigned a value but never used                                                                 @typescript-eslint/no-unused-vars
+  104:6   warning  React Hook useEffect has a missing dependency: 'POLL_STOP_AFTER_MS'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  139:6   warning  React Hook useEffect has a missing dependency: 'POLL_STOP_AFTER_MS'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  147:36  error    Unexpected any. Specify a different type                                                                               @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\components\ui\input.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+B:\Projetos freelancer\dashboard\components\ui\textarea.tsx
+  4:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+B:\Projetos freelancer\dashboard\hooks\use-notification-sound.ts
+   4:9   warning  'audioRef' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  11:67  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\hooks\use-toast.ts
+  16:7  warning  'actionTypes' is assigned a value but only used as a type  @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\jest.setup.ts
+  10:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:34  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  12:33  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\lib\socket.tsx
+   66:9   warning  'allHostsFailed' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  108:41  warning  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  114:41  warning  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  153:39  warning  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  194:51  warning  'e' is defined but never used                        @typescript-eslint/no-unused-vars
+  204:32  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\lib\socketServerClient.ts
+  36:61  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+B:\Projetos freelancer\dashboard\prisma\seed.ts
+   25:9  warning  'admin' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  200:9  warning  'tags' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+B:\Projetos freelancer\dashboard\socket-server.js
+  1:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  2:20  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+B:\Projetos freelancer\dashboard\test-socket-simple.js
+  1:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+B:\Projetos freelancer\dashboard\test-socket.js
+  1:16  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+Ô£û 143 problems (79 errors, 64 warnings)
+
