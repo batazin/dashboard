@@ -92,14 +92,14 @@ export function SocketProvider({ children }: SocketProviderProps) {
 
       s.on('connect_error', (error) => {
         try {
-          console.error('Socket connect_error:', {
+          console.warn('Socket connect_error:', {
             message: error?.message ?? String(error),
             name: error?.name,
             stack: error?.stack,
             url,
           })
         } catch (e) {
-          console.error('Socket connect_error (failed to inspect):', e)
+          console.warn('Socket connect_error (failed to inspect):', e)
         }
 
         // Try next fallback host if we have one
@@ -110,7 +110,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
           socketInstance = createSocket(candidateHosts[fallbackIndex])
           setSocketState(socketInstance)
         } else {
-          console.error('All socket hosts failed; please ensure the socket server is running on port 3001 and network allows connections.')
+          console.warn('All socket hosts failed; please ensure the socket server is running on port 3001 and network allows connections.')
           try { s.disconnect() } catch (e) {}
           setIsConnected(false)
           setSocketState(null);
@@ -138,17 +138,17 @@ export function SocketProvider({ children }: SocketProviderProps) {
       })
 
       s.on('error', (error) => {
-        console.error('Socket error:', error)
+        console.warn('Socket error:', error)
       })
 
       s.on('reconnect_attempt', (attempt) => {
         console.warn(`Socket reconnect attempt #${attempt}`)
       })
       s.on('reconnect_error', (err) => {
-        console.error('Socket reconnect error:', err)
+        console.warn('Socket reconnect error:', err)
       })
       s.on('reconnect_failed', () => {
-        console.error('Socket reconnect failed - disconnecting')
+        console.warn('Socket reconnect failed - disconnecting')
         setIsConnected(false)
         try { s.disconnect() } catch (e) {}
         setSocketState(null);
