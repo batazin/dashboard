@@ -48,6 +48,7 @@ export const messageSchema = z.object({
 export const userUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   image: z.string().url().optional(),
+  managedTags: z.array(z.string()).optional(),
 })
 
 export const tagSchema = z.object({

@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [substituteProfessionalId, setSubstituteProfessionalId] = useState<string | null>(null)
   const [substituteUntil, setSubstituteUntil] = useState<string | null>(null)
   const [allProfessionals, setAllProfessionals] = useState<any[]>([])
+  const [managedTags, setManagedTags] = useState<string[]>([])
+  const [availableTags, setAvailableTags] = useState<any[]>([])
 
   // Buscar dados do profissional se for PROFESSIONAL
   useEffect(() => {
@@ -60,6 +62,43 @@ export default function ProfilePage() {
           console.error("Erro ao buscar dados do profissional:", error)
         }
       }
+
+      // Fetch user profile to get managedTags
+      try {
+        const response = await fetch("/api/profile")
+        if (response.ok) {
+          const userData = await response.json()
+          setManagedTags(userData.managedTags?.map((t: any) => t.name) || [])
+        }
+      } catch (error) {
+        console.error("Erro ao buscar perfil do usuário:", error)
+      }
+
+      // Fetch all available tags
+      try {
+        const response = await fetch("/api/tags")
+        const { PREDEFINED_TAGS } = await import("@/lib/utils")
+        
+        if (response.ok) {
+          const tagsData = await response.json()
+          // Combine predefined tags with any extra tags from the API
+          const mergedTags = [...PREDEFINED_TAGS]
+          tagsData.forEach((apiTag: any) => {
+            if (!mergedTags.find(t => t.name.toUpperCase() === apiTag.name.toUpperCase())) {
+              mergedTags.push(apiTag)
+            }
+          })
+          setAvailableTags(mergedTags)
+        } else {
+          // Fallback to predefined if API fails
+          setAvailableTags(PREDEFINED_TAGS)
+        }
+      } catch (error) {
+        console.error("Erro ao buscar tags:", error)
+        const { PREDEFINED_TAGS } = await import("@/lib/utils")
+        setAvailableTags(PREDEFINED_TAGS)
+      }
+
       setLoading(false)
     }
 
@@ -112,6 +151,20 @@ export default function ProfilePage() {
 
         const updated = await response.json()
         setProfessional(updated)
+      }
+
+      // Atualizar tags gerenciadas e nome
+      const profileResponse = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          managedTags,
+        }),
+      })
+
+      if (!profileResponse.ok) {
+        throw new Error("Erro ao atualizar perfil básico")
       }
 
       toast({
@@ -204,6 +257,116 @@ export default function ProfilePage() {
           <Button onClick={handleSave} disabled={saving}>
             {saving ? "Salvando..." : "Salvar Alterações"}
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Produtos que Gerencio</CardTitle>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Selecione os produtos pelos quais você é responsável. Isso ajuda a filtrar
+            os pedidos e recomendar os profissionais certos.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Selected Tags Section */}
+          <div className="space-y-2">
+            <Label className="text-sm font-semibold">Produtos Selecionados ({managedTags.length})</Label>
+            <div className="flex flex-wrap gap-2 p-3 min-h-[50px] border rounded-lg bg-gray-50/50 dark:bg-slate-900/50">
+              {managedTags.length === 0 ? (
+                <span className="text-sm text-gray-400 italic">Nenhum produto selecionado</span>
+              ) : (
+                managedTags.sort().map((tagName) => {
+                  const tagData = availableTags.find(t => t.name === tagName)
+                  return (
+                    <Badge
+                      key={tagName}
+                      variant="secondary"
+                      className="px-3 py-1 cursor-pointer hover:bg-red-100 hover:text-red-700 transition-colors group"
+                      onClick={() => setManagedTags(managedTags.filter((t) => t !== tagName))}
+                    >
+                      {tagName}
+                      <span className="ml-2 opacity-30 group-hover:opacity-100">×</span>
+                    </Badge>
+                  )
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Tag Selection Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between gap-4">
+              <Label className="text-sm font-semibold">Disponíveis para Seleção</Label>
+              <div className="flex-1 max-w-xs">
+                <Input 
+                  placeholder="Procurar produto..." 
+                  className="h-8 text-sm"
+                  onChange={(e) => {
+                    const query = e.target.value.toLowerCase();
+                    const buttons = document.querySelectorAll('.tag-select-btn');
+                    buttons.forEach((btn: any) => {
+                      const name = btn.getAttribute('data-name')?.toLowerCase() || "";
+                      btn.style.display = name.includes(query) ? 'flex' : 'none';
+                    });
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto p-1 border rounded-md">
+              {availableTags.map((tag) => {
+                const isSelected = managedTags.includes(tag.name)
+                return (
+                  <button
+                    key={tag.name}
+                    data-name={tag.name}
+                    type="button"
+                    onClick={() => {
+                      if (isSelected) {
+                        setManagedTags(managedTags.filter((t) => t !== tag.name))
+                      } else {
+                        setManagedTags([...managedTags, tag.name])
+                      }
+                    }}
+                    className={`tag-select-btn px-3 py-1.5 rounded-md text-xs font-bold transition-all border ${
+                      isSelected
+                        ? "ring-2 ring-primary ring-offset-1 scale-105 opacity-100"
+                        : "opacity-60 hover:opacity-100 hover:scale-105"
+                    }`}
+                    style={{
+                      backgroundColor: isSelected ? tag.color : (tag.color + "10"),
+                      color: isSelected ? "#fff" : tag.color,
+                      borderColor: tag.color,
+                    }}
+                  >
+                    {isSelected ? "✓ " : ""}
+                    {tag.name}
+                  </button>
+                )
+              })}
+              {availableTags.length === 0 && (
+                <p className="p-4 text-center text-sm text-gray-500 w-full">
+                  Nenhum produto cadastrado no sistema.
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="pt-4 flex justify-end border-t">
+            <Button 
+              onClick={handleSave} 
+              disabled={saving}
+              className="px-8 shadow-md hover:shadow-lg transition-all"
+            >
+              {saving ? (
+                <>
+                  <span className="animate-spin mr-2 h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span>
+                  Salvando...
+                </>
+              ) : "Salvar Configurações de Produtos"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

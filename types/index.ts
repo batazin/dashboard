@@ -13,6 +13,7 @@ export interface User {
   role: Role
   createdAt: Date
   updatedAt: Date
+  managedTags?: Tag[]
 }
 
 export interface Professional {

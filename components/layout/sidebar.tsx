@@ -35,7 +35,7 @@ import { useSocket } from "@/lib/socket"
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Pedidos", href: "/orders", icon: ClipboardList },
-  { name: "Profissionais", href: "/professionals", icon: Users },
+  { name: "Devs", href: "/professionals", icon: Users },
   { name: "Relatórios", href: "/reports", icon: BarChart3 },
   { name: "Perfil", href: "/profile", icon: User },
 ]

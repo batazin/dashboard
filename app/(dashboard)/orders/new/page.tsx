@@ -21,7 +21,11 @@ import Link from "next/link"
 
 interface Professional {
   id: string
-  user: { name: string | null; email?: string | null }
+  user: { 
+    name: string | null; 
+    email?: string | null;
+    managedTags?: { name: string }[]
+  }
   specialty: string
 }
 
@@ -38,6 +42,7 @@ export default function NewOrderPage() {
   const [loading, setLoading] = useState(false)
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [existingTags, setExistingTags] = useState<Tag[]>([])
+  const [userManagedTags, setUserManagedTags] = useState<string[]>([])
   
   const [formData, setFormData] = useState({
     title: "",
@@ -61,6 +66,16 @@ export default function NewOrderPage() {
     fetch("/api/tags")
       .then((res) => res.json())
       .then((data) => setExistingTags(data))
+      .catch(console.error)
+
+    // Fetch user managed tags to filter available tags
+    fetch("/api/profile")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.managedTags) {
+          setUserManagedTags(data.managedTags.map((t: any) => t.name))
+        }
+      })
       .catch(console.error)
   }, [])
 
@@ -115,12 +130,38 @@ export default function NewOrderPage() {
       setSubstituteNotice(null)
     } catch (err) {
       console.error('Erro ao processar seleção de profissional', err)
-      toast({ title: 'Erro', description: 'Não foi possível verificar o profissional selecionado', variant: 'destructive' })
+      toast({ title: 'Erro', description: 'Não foi possível verificar o dev selecionado', variant: 'destructive' })
     }
   }
 
+  // Calculate recommended professionals based on selected tags
+  const recommendedProfessionals = professionals.filter(prof => 
+    prof.user.managedTags?.some(tag => formData.tags.includes(tag.name))
+  )
+
+  const isRecommended = (profId: string) => {
+    return recommendedProfessionals.some(p => p.id === profId)
+  }
+
+  // Auto-select first recommended professional when recommendations change
+  useEffect(() => {
+    if (recommendedProfessionals.length > 0 && formData.professionalId === "none") {
+      setFormData(prev => ({ ...prev, professionalId: recommendedProfessionals[0].id }))
+    }
+  }, [recommendedProfessionals, formData.professionalId])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.professionalId === "none") {
+      toast({
+        title: "Dev obrigatório",
+        description: "Por favor, selecione um desenvolvedor responsável.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
 
     try {
@@ -193,6 +234,14 @@ export default function NewOrderPage() {
     }
   }
 
+  const filteredPredefinedTags = userManagedTags.length > 0
+    ? PREDEFINED_TAGS.filter(tag => userManagedTags.includes(tag.name))
+    : PREDEFINED_TAGS
+
+  const filteredExistingTags = userManagedTags.length > 0
+    ? existingTags.filter(tag => userManagedTags.includes(tag.name))
+    : existingTags
+
   return (
     <div className="p-6 max-w-2xl mx-auto">
       <div className="mb-6">
@@ -231,74 +280,53 @@ export default function NewOrderPage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Prioridade</Label>
-                <Select
-                  value={formData.priority}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(priorityLabels).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>
-                        {label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Profissional (opcional)</Label>
-                <Select
-                  value={formData.professionalId}
-                  onValueChange={(value) => { void handleProfessionalChange(value) }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um profissional" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Nenhum</SelectItem>
-                    {professionals.map((prof) => (
-                      <SelectItem key={prof.id} value={prof.id}>
-                        {prof.user.name} - {prof.specialty}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {substituteNotice && (
-                  <p className="text-sm text-gray-700 mt-2">{substituteNotice}</p>
-                )}
-              </div>
+            <div className="space-y-2">
+              <Label>Prioridade</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) => setFormData((prev) => ({ ...prev, priority: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(priorityLabels).map(([key, label]) => (
+                    <SelectItem key={key} value={key}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Tags</Label>
-              <div className="flex gap-2">
-                <Input
-                  value={newTag}
-                  onChange={(e) => setNewTag(e.target.value)}
-                  placeholder="Nova tag..."
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault()
-                      addTag()
-                    }
-                  }}
-                />
-                <Button type="button" variant="secondary" onClick={addTag}>
-                  Adicionar
-                </Button>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Tags</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    placeholder="Nova tag..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault()
+                        addTag()
+                      }
+                    }}
+                  />
+                  <Button type="button" variant="secondary" onClick={addTag}>
+                    Adicionar
+                  </Button>
+                </div>
               </div>
 
               {/* Predefined Tags Section */}
-              <div className="mt-4">
-                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Sugestões rápidas:</span>
+              <div className="mt-2">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">
+                  {userManagedTags.length > 0 ? "Seus produtos gerenciados:" : "Sugestões rápidas:"}
+                </span>
                 <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 border rounded-md bg-gray-50/50 dark:bg-slate-900/50">
-                  {PREDEFINED_TAGS.map((tag) => (
+                  {filteredPredefinedTags.map((tag) => (
                     <button
                       key={tag.name}
                       type="button"
@@ -316,7 +344,7 @@ export default function NewOrderPage() {
                 </div>
               </div>
 
-              {existingTags.length > 0 && (
+              {filteredExistingTags.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-500">Sugestões:</span>
@@ -327,11 +355,11 @@ export default function NewOrderPage() {
                       placeholder="Procurar tags..."
                       className="text-sm px-2 py-1 border rounded-md focus:outline-none"
                     />
-                    <span className="text-sm text-gray-400">{existingTags.length} disponíveis</span>
+                    <span className="text-sm text-gray-400">{filteredExistingTags.length} disponíveis</span>
                   </div>
 
                   <div className="flex flex-wrap gap-2 mt-2 max-h-44 overflow-auto">
-                    {existingTags
+                    {filteredExistingTags
                       .filter((tag) => !formData.tags.includes(tag.name))
                       .filter((tag) => tag.name.toLowerCase().includes(tagQuery.toLowerCase()))
                       .sort((a, b) => a.name.localeCompare(b.name))
@@ -365,6 +393,52 @@ export default function NewOrderPage() {
                     </span>
                   ))}
                 </div>
+              )}
+            </div>
+
+            <div className="space-y-2 pt-4 border-t">
+              <Label className="font-semibold text-gray-900 dark:text-white">Dev Responsável</Label>
+              <Select
+                value={formData.professionalId}
+                onValueChange={(value) => { void handleProfessionalChange(value) }}
+              >
+                <SelectTrigger className={cn(
+                  recommendedProfessionals.length > 0 && formData.professionalId === "none" && "border-indigo-300 ring-indigo-100",
+                  formData.professionalId === "none" && "border-red-200"
+                )}>
+                  <SelectValue placeholder="Selecione um dev" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Selecione um profissional...</SelectItem>
+                  {/* Recommended Professionals first */}
+                  {recommendedProfessionals.length > 0 && (
+                    <>
+                      <div className="px-2 py-1 text-xs font-semibold text-indigo-600 bg-indigo-50">Recomendados para estas tags</div>
+                      {recommendedProfessionals.map((prof) => (
+                        <SelectItem key={`rec-${prof.id}`} value={prof.id}>
+                          {prof.user.name} - {prof.specialty} ★
+                        </SelectItem>
+                      ))}
+                      <div className="h-px bg-gray-100 my-1" />
+                      <div className="px-2 py-1 text-xs font-semibold text-gray-500">Outros desenvolvedores</div>
+                    </>
+                  )}
+                  {professionals
+                    .filter(p => !isRecommended(p.id))
+                    .map((prof) => (
+                    <SelectItem key={prof.id} value={prof.id}>
+                      {prof.user.name} - {prof.specialty}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {substituteNotice && (
+                <p className="text-sm text-gray-700 mt-2">{substituteNotice}</p>
+              )}
+              {recommendedProfessionals.length > 0 && formData.professionalId === "none" && (
+                <p className="text-xs text-indigo-600 font-medium animate-pulse">
+                  Temos devs recomendados para as tags selecionadas acima!
+                </p>
               )}
             </div>
 

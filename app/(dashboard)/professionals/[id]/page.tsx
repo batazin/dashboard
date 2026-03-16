@@ -226,8 +226,8 @@ export default function ProfessionalDetailPage({ params }: ProfessionalDetailPag
               Confirmar Exclusão
             </h3>
             <p className="text-gray-600 mb-4">
-              Tem certeza que deseja remover o profissional <strong>{professional.user.name}</strong>? 
-              Esta ação não pode ser desfeita. O usuário será convertido para Solicitante.
+              Tem certeza que deseja remover o dev <strong>{professional.user.name}</strong>? 
+              Esta ação não pode ser desfeita. O usuário será convertido para Analista.
             </p>
             <div className="flex justify-end gap-2">
               <Button 
@@ -254,10 +254,10 @@ export default function ProfessionalDetailPage({ params }: ProfessionalDetailPag
         <div>
           <Link href="/professionals" className="inline-flex items-center text-gray-500 hover:text-gray-700 mb-2">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Voltar para profissionais
+            Voltar para devs
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">
-            {professional.user.name || "Profissional"}
+            {professional.user.name || "Dev"}
           </h1>
         </div>
 
@@ -346,7 +346,7 @@ export default function ProfessionalDetailPage({ params }: ProfessionalDetailPag
 
                   {(editData.status === 'UNAVAILABLE' || editData.substituteProfessionalId) && (
                     <div className="space-y-2">
-                      <Label>Substituto Temporário</Label>
+                      <Label>Substituto Temporário (Dev)</Label>
                       <Select value={editData.substituteProfessionalId || "__none"} onValueChange={(v) => setEditData((prev) => ({ ...prev, substituteProfessionalId: v === '__none' ? null : v }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um substituto (opcional)" />

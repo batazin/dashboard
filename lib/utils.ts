@@ -80,8 +80,8 @@ export const priorityLabels = {
 
 export const roleLabels = {
   ADMIN: 'Administrador',
-  REQUESTER: 'Solicitante',
-  PROFESSIONAL: 'Profissional'
+  REQUESTER: 'Analista',
+  PROFESSIONAL: 'Dev'
 }
 
 export const professionalStatusLabels = {

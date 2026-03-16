@@ -187,9 +187,9 @@ export default function ProfessionalsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Profissionais</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Devs</h1>
           <p className="text-gray-500">
-            {pagination.total} profissional{pagination.total !== 1 ? "is" : ""} encontrado{pagination.total !== 1 ? "s" : ""}
+            {pagination.total} dev{pagination.total !== 1 ? "s" : ""} encontrado{pagination.total !== 1 ? "s" : ""}
           </p>
         </div>
         
@@ -198,14 +198,14 @@ export default function ProfessionalsPage() {
             <DialogTrigger asChild>
               <Button className="gap-2">
                 <Plus className="h-4 w-4" />
-                Novo Profissional
+                Novo Dev
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Novo Profissional</DialogTitle>
+                <DialogTitle>Novo Dev</DialogTitle>
                 <DialogDescription>
-                  Cadastre um novo profissional no sistema
+                  Cadastre um novo dev no sistema
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
@@ -300,7 +300,7 @@ export default function ProfessionalsPage() {
                 <Input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar profissionais..."
+                  placeholder="Buscar devs..."
                   className="pl-10"
                 />
               </div>
@@ -344,7 +344,7 @@ export default function ProfessionalsPage() {
         <Card>
           <CardContent className="p-8 text-center">
             <User className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">Nenhum profissional encontrado.</p>
+            <p className="text-gray-500">Nenhum dev encontrado.</p>
           </CardContent>
         </Card>
       ) : (
@@ -369,7 +369,7 @@ export default function ProfessionalsPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold truncate">
-                        {professional.user.name || "Profissional"}
+                        {professional.user.name || "Dev"}
                       </h3>
                       <p className="text-sm text-gray-500">{professional.specialty}</p>
                       <Badge

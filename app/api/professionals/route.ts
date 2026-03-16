@@ -50,13 +50,17 @@ export async function GET(request: NextRequest) {
       prisma.professional.findMany({
         where,
         include: {
-          user: true,
+          user: {
+            include: {
+              managedTags: true,
+            },
+          },
           orders: {
             where: {
               status: { notIn: ["FINISHED", "CANCELLED"] },
             },
           },
-        },
+        } as any,
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * limit,
         take: limit,
@@ -65,15 +69,15 @@ export async function GET(request: NextRequest) {
     ])
 
     // Filter by open orders if requested
-    let filteredProfessionals: ProfessionalWithOrders[] = professionals
+    let filteredProfessionals: any[] = professionals as any
     if (hasOpenOrders === "true") {
-      filteredProfessionals = professionals.filter((p: ProfessionalWithOrders) => p.orders.length > 0)
+      filteredProfessionals = (professionals as any).filter((p: any) => p.orders.length > 0)
     } else if (hasOpenOrders === "false") {
-      filteredProfessionals = professionals.filter((p: ProfessionalWithOrders) => p.orders.length === 0)
+      filteredProfessionals = (professionals as any).filter((p: any) => p.orders.length === 0)
     }
 
     return NextResponse.json({
-      professionals: filteredProfessionals.map((p: ProfessionalWithOrders) => ({
+      professionals: filteredProfessionals.map((p: any) => ({
         ...p,
         openOrdersCount: p.orders.length,
       })),

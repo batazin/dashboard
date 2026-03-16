@@ -140,14 +140,14 @@ export default function RegisterPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="REQUESTER">Solicitante</SelectItem>
-                  <SelectItem value="PROFESSIONAL">Profissional</SelectItem>
+                  <SelectItem value="REQUESTER">Analista</SelectItem>
+                  <SelectItem value="PROFESSIONAL">Dev</SelectItem>
                 </SelectContent>
               </Select>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {role === "REQUESTER" 
-                  ? "Solicitantes podem criar e gerenciar pedidos"
-                  : "Profissionais podem receber e trabalhar em pedidos"}
+                  ? "Analistas podem criar e gerenciar pedidos"
+                  : "Devs podem receber e trabalhar em pedidos"}
               </p>
             </div>
 

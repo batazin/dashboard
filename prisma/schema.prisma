@@ -81,6 +81,8 @@ model User {
   
   // Notifications for this user
   notifications  Notification[]
+  // Products/Tags managed by this user
+  managedTags    Tag[]     @relation("UserManagedTags")
 }
 
 // ==================== PROFESSIONAL MODEL ====================
@@ -168,6 +170,7 @@ model Tag {
   createdAt DateTime @default(now())
 
   orders    Order[]
+  managedByUsers User[]   @relation("UserManagedTags")
 }
 
 // ==================== ATTACHMENT MODEL ====================

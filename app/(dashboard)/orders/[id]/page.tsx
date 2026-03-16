@@ -601,7 +601,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
               <div className="flex items-center gap-3">
                 <User className="h-5 w-5 text-gray-400" />
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Solicitante</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Analista</p>
                   <p className="font-medium">{order.requester.name || "Usuário"}</p>
                 </div>
               </div>
@@ -610,7 +610,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <div className="flex items-center gap-3">
                   <User className="h-5 w-5 text-gray-400" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Profissional</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Dev</p>
                     <p className="font-medium">{order.professional.user.name}</p>
                   </div>
                 </div>
@@ -625,12 +625,12 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Reatribuir Profissional</DialogTitle>
+                        <DialogTitle>Reatribuir Dev</DialogTitle>
                         <DialogDescription>Selecione outro profissional para assumir este pedido.</DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label>Profissional</Label>
+                          <Label>Dev</Label>
                           <Select value={selectedProfessionalId || ""} onValueChange={async (v) => {
                             setReassignSubstituteNotice(null)
                             // if empty string, clear
