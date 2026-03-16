@@ -412,10 +412,10 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 </Dialog>
               )}
 
-              {session?.user?.role === "ADMIN" && (
+              {(session?.user?.role === "ADMIN" || order.requesterId === session?.user?.id) && (
                 <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                   <DialogTrigger asChild>
-                    <Button variant="destructive" size="sm" className="gap-1">
+                    <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-600 hover:bg-red-50 gap-1">
                       <Trash2 className="h-4 w-4" />
                       Excluir
                     </Button>
@@ -424,7 +424,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     <DialogHeader>
                       <DialogTitle>Excluir Pedido</DialogTitle>
                       <DialogDescription>
-                        Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita.
+                        Tem certeza que deseja excluir este pedido? Esta ação não pode ser desfeita e removerá todo o histórico e mensagens.
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -432,7 +432,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                         Cancelar
                       </Button>
                       <Button variant="destructive" onClick={handleDelete} disabled={updating}>
-                        {updating ? "Excluindo..." : "Excluir"}
+                        {updating ? "Excluindo..." : "Excluir Definitivamente"}
                       </Button>
                     </DialogFooter>
                   </DialogContent>
