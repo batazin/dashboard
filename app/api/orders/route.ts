@@ -6,6 +6,33 @@ import { orderCreateSchema } from "@/lib/validations"
 import { ZodError } from "zod"
 import { notifyProfessionalAssigned } from "@/lib/notifications"
 
+const DEFAULT_TAG_COLORS: Record<string, string> = {
+  "DERMA": "#FFDFEF",
+  "USA": "#0D47A1",
+  "MENTORIA": "#6096BA",
+  "EXTENSIVO": "#740909",
+  "REVALIDA": "#5E35B1",
+  "ANESTESIO": "#424242",
+  "ENDOCRINO": "#B71C1C",
+  "OFTALMO": "#1A237E",
+  "PEDIATRIA": "#FFECB3",
+  "CLINICOF": "#D32F2F",
+  "G.O": "#F48FB1",
+  "CARDIO": "#B71C1C",
+  "CIRURGIA": "#B3E5FC",
+  "HANDS": "#1565C0",
+  "HIIT TARGET": "#4DB6AC",
+  "AULAS": "#000B1D",
+  "HIIT": "#E040FB",
+  "RADIO": "#7986CB",
+  "TEMI": "#2196F3",
+  "HOME": "#EEEEEE",
+  "EVENTOS": "#EEEEEE",
+  "UROLOGIA": "#1A237E",
+  "Concursus": "#0D47A1",
+  "BLACK NOVEMBER": "#000000",
+}
+
 // GET /api/orders - List orders with filters
 export async function GET(request: NextRequest) {
   try {
@@ -200,13 +227,16 @@ export async function POST(request: NextRequest) {
       // only include professionalId when defined and not null
       ...(assignedProfessionalId ? { professionalId: assignedProfessionalId } : {}),
         tags: validatedData.tags?.length
-          ? {
-              connectOrCreate: validatedData.tags.map((tag) => ({
-                where: { name: tag },
-                create: { name: tag },
-              })),
-            }
-          : undefined,
+            ? {
+                connectOrCreate: validatedData.tags.map((tag) => ({
+                  where: { name: tag },
+                  create: { 
+                    name: tag,
+                    color: DEFAULT_TAG_COLORS[tag] || "#6366f1"
+                  },
+                })),
+              }
+            : undefined,
         statusHistory: {
             create: {
             toStatus: "NEW",

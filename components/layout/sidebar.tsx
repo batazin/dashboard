@@ -117,7 +117,17 @@ export function Sidebar() {
               <span className="font-semibold text-lg">Dashboard</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className={`h-2.5 w-2.5 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-400'}`} title={isConnected ? 'Socket conectado' : 'Socket desconectado'} />
+              <div 
+                className={cn(
+                  "h-2.5 w-2.5 rounded-full transition-all duration-500",
+                  isConnected 
+                    ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" 
+                    : (process.env.NODE_ENV === 'production' 
+                        ? "bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]" // In production we show green (polling active)
+                        : "bg-red-400")
+                )} 
+                title={isConnected ? 'Socket conectado' : (process.env.NODE_ENV === 'production' ? 'Sistema Online (Modo Otimizado)' : 'Socket desconectado')} 
+              />
               {!isConnected && process.env.NODE_ENV === 'development' && (
                 <Button
                   variant="ghost"

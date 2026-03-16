@@ -95,3 +95,45 @@ export const professionalStatusColors = {
   UNAVAILABLE: 'bg-gray-100 text-gray-800',
   BUSY: 'bg-yellow-100 text-yellow-800'
 }
+
+export const PREDEFINED_TAGS = [
+  { name: "DERMA", color: "#FFDFEF", textColor: "#C2185B" },
+  { name: "USA", color: "#0D47A1", textColor: "#FFFFFF" },
+  { name: "MENTORIA", color: "#6096BA", textColor: "#FFFFFF" },
+  { name: "EXTENSIVO", color: "#740909", textColor: "#FFFFFF" },
+  { name: "REVALIDA", color: "#5E35B1", textColor: "#FFFFFF" },
+  { name: "ANESTESIO", color: "#424242", textColor: "#FFFFFF" },
+  { name: "ENDOCRINO", color: "#B71C1C", textColor: "#FFFFFF" },
+  { name: "OFTALMO", color: "#1A237E", textColor: "#FFFFFF" },
+  { name: "PEDIATRIA", color: "#FFECB3", textColor: "#795548" },
+  { name: "CLINICOF", color: "#D32F2F", textColor: "#FFFFFF" },
+  { name: "G.O", color: "#F48FB1", textColor: "#AD1457" },
+  { name: "CARDIO", color: "#B71C1C", textColor: "#FFFFFF" },
+  { name: "CIRURGIA", color: "#B3E5FC", textColor: "#0288D1" },
+  { name: "HANDS", color: "#1565C0", textColor: "#FFFFFF" },
+  { name: "HIIT TARGET", color: "#4DB6AC", textColor: "#000000" },
+  { name: "AULAS", color: "#000B1D", textColor: "#FFFFFF" },
+  { name: "HIIT", color: "#E040FB", textColor: "#FFFFFF" },
+  { name: "RADIO", color: "#7986CB", textColor: "#FFFFFF" },
+  { name: "TEMI", color: "#2196F3", textColor: "#FFFFFF" },
+  { name: "HOME", color: "#EEEEEE", textColor: "#D32F2F" },
+  { name: "EVENTOS", color: "#EEEEEE", textColor: "#0D47A1" },
+  { name: "UROLOGIA", color: "#1A237E", textColor: "#FFFFFF" },
+  { name: "Concursus", color: "#0D47A1", textColor: "#FFFFFF" },
+  { name: "BLACK NOVEMBER", color: "#000000", textColor: "#FFFFFF" },
+]
+
+export function getTagStyles(tagName: string, fallbackColor?: string) {
+  const predefined = PREDEFINED_TAGS.find(t => t.name.toUpperCase() === tagName.toUpperCase())
+  if (predefined) {
+    return {
+      backgroundColor: predefined.color,
+      color: predefined.textColor
+    }
+  }
+  const color = fallbackColor || "#6366f1"
+  return {
+    backgroundColor: color + "15",
+    color: color
+  }
+}

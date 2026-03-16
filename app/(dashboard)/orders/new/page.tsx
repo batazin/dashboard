@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { priorityLabels } from "@/lib/utils"
+import { priorityLabels, cn, PREDEFINED_TAGS, getTagStyles } from "@/lib/utils"
 import { ArrowLeft, X } from "lucide-react"
 import Link from "next/link"
 
@@ -294,6 +294,28 @@ export default function NewOrderPage() {
                 </Button>
               </div>
 
+              {/* Predefined Tags Section */}
+              <div className="mt-4">
+                <span className="text-sm font-medium text-gray-500 dark:text-gray-400 block mb-2">Sugestões rápidas:</span>
+                <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1 border rounded-md bg-gray-50/50 dark:bg-slate-900/50">
+                  {PREDEFINED_TAGS.map((tag) => (
+                    <button
+                      key={tag.name}
+                      type="button"
+                      onClick={() => selectExistingTag(tag.name)}
+                      disabled={formData.tags.includes(tag.name)}
+                      className={cn(
+                        "px-3 py-1 text-xs font-bold rounded-md transition-all hover:scale-105 active:scale-95 disabled:opacity-30 disabled:hover:scale-100",
+                        formData.tags.includes(tag.name) ? "ring-2 ring-primary ring-offset-2" : "shadow-sm"
+                      )}
+                      style={getTagStyles(tag.name)}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {existingTags.length > 0 && (
                 <div className="mt-2">
                   <div className="flex items-center gap-2">
@@ -333,10 +355,11 @@ export default function NewOrderPage() {
                   {formData.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs rounded-full bg-indigo-100 text-indigo-800"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-bold rounded-md shadow-sm"
+                      style={getTagStyles(tag)}
                     >
                       {tag}
-                      <button type="button" onClick={() => removeTag(tag)}>
+                      <button type="button" onClick={() => removeTag(tag)} className="hover:opacity-70 transition-opacity">
                         <X className="h-3 w-3" />
                       </button>
                     </span>

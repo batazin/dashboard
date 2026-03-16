@@ -143,63 +143,42 @@ async function main() {
   console.log("👤 Created 5 professional users")
 
   // Create tags
-  const tagNames = [
-    "Anestesio",
-    "Aulas",
-    "Cardio",
-    "Clinicof",
-    "Cirurgia",
-    "Derma",
-    "Usa",
-    "Mentoria",
-    "Extensivo",
-    "Revalida",
-    "Endócrino",
-    "Oftalmo",
-    "Pediatria",
-    "G.O",
-    "Hands",
-    "Hiit Target",
-    "Hiit",
-    "Radio",
-    "Temi",
-    "Home",
-    "Eventos",
-    "Urologia",
-    "Concursus",
-    "Black November",
-    "Outros",
-  ]
-
-  const colors = [
-    "#ef4444",
-    "#f97316",
-    "#f59e0b",
-    "#eab308",
-    "#84cc16",
-    "#22c55e",
-    "#06b6d4",
-    "#3b82f6",
-    "#8b5cf6",
-    "#ec4899",
-    "#db2777",
-    "#fb7185",
-    "#6366f1",
-    "#4b5563",
-    "#0ea5a4",
-    "#a78bfa",
-    "#60a5fa",
-    "#f472b6",
-    "#10b981",
-    "#64748b",
-    "#7c3aed",
-    "#b91c1c",
-    "#111827",
+  const predefinedTags = [
+    { name: "DERMA", color: "#FFDFEF", textColor: "#C2185B" },
+    { name: "USA", color: "#0D47A1", textColor: "#FFFFFF" },
+    { name: "MENTORIA", color: "#6096BA", textColor: "#FFFFFF" },
+    { name: "EXTENSIVO", color: "#740909", textColor: "#FFFFFF" },
+    { name: "REVALIDA", color: "#5E35B1", textColor: "#FFFFFF" },
+    { name: "ANESTESIO", color: "#424242", textColor: "#FFFFFF" },
+    { name: "ENDOCRINO", color: "#B71C1C", textColor: "#FFFFFF" },
+    { name: "OFTALMO", color: "#1A237E", textColor: "#FFFFFF" },
+    { name: "PEDIATRIA", color: "#FFECB3", textColor: "#795548" },
+    { name: "CLINICOF", color: "#D32F2F", textColor: "#FFFFFF" },
+    { name: "G.O", color: "#F48FB1", textColor: "#AD1457" },
+    { name: "CARDIO", color: "#B71C1C", textColor: "#FFFFFF" },
+    { name: "CIRURGIA", color: "#B3E5FC", textColor: "#0288D1" },
+    { name: "HANDS", color: "#1565C0", textColor: "#FFFFFF" },
+    { name: "HIIT TARGET", color: "#4DB6AC", textColor: "#000000" },
+    { name: "AULAS", color: "#000B1D", textColor: "#FFFFFF" },
+    { name: "HIIT", color: "#E040FB", textColor: "#FFFFFF" },
+    { name: "RADIO", color: "#7986CB", textColor: "#FFFFFF" },
+    { name: "TEMI", color: "#2196F3", textColor: "#FFFFFF" },
+    { name: "HOME", color: "#EEEEEE", textColor: "#D32F2F" },
+    { name: "EVENTOS", color: "#EEEEEE", textColor: "#0D47A1" },
+    { name: "UROLOGIA", color: "#1A237E", textColor: "#FFFFFF" },
+    { name: "Concursus", color: "#0D47A1", textColor: "#FFFFFF" },
+    { name: "BLACK NOVEMBER", color: "#000000", textColor: "#FFFFFF" },
+    { name: "Outros", color: "#6366f1", textColor: "#FFFFFF" },
   ]
 
   const tags = await Promise.all(
-    tagNames.map((name, i) =>
-      prisma.tag.create({ data: { name, color: colors[i % colors.length] } }),
+    predefinedTags.map((tag) =>
+      prisma.tag.create({ 
+        data: { 
+          name: tag.name, 
+          color: tag.color // Since Prisma Tag model only has 'color', we store the primary color
+        } 
+      }),
     ),
   )
   console.log("🏷️ Created tags")
