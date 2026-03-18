@@ -9,6 +9,7 @@ interface CreateNotificationParams {
   title: string
   message: string
   orderId?: string
+  silent?: boolean
 }
 
 export async function createNotification({
@@ -17,6 +18,7 @@ export async function createNotification({
   title,
   message,
   orderId,
+  silent = false,
 }: CreateNotificationParams) {
   try {
     const notification = await prisma.notification.create({
@@ -26,7 +28,8 @@ export async function createNotification({
         title,
         message,
         orderId,
-      },
+        silent,
+      } as any,
     })
     
     console.log(`✅ Notification created for user ${userId}: ${title}`)
@@ -91,6 +94,7 @@ export async function notifyStatusChanged(
     IN_ANALYSIS: "Em Análise",
     IN_PROGRESS: "Em Execução",
     WAITING_CLIENT: "Aguardando Cliente",
+    WAITING_CONFIRMATION: "Aguardando Confirmação",
     FINISHED: "Finalizado",
     CANCELLED: "Cancelado",
   }
@@ -101,6 +105,7 @@ export async function notifyStatusChanged(
     title: "Status do pedido alterado",
     message: `O pedido "${orderTitle}" foi alterado para "${statusLabels[newStatus] || newStatus}" por ${changedByName}.`,
     orderId,
+    silent: newStatus === "WAITING_CONFIRMATION",
   })
 }
 

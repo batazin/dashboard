@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { orderUpdateSchema, orderFinishSchema } from "@/lib/validations"
-import { notifyProfessionalAssigned } from "@/lib/notifications"
+import { notifyProfessionalAssigned, notifyStatusChanged } from "@/lib/notifications"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -165,6 +165,21 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       }
     } catch (err) {
       console.error('Error notifying newly assigned professional:', err)
+    }
+
+    // If status changed to WAITING_CONFIRMATION, notify the requester
+    if (statusChanged && validatedData.status === "WAITING_CONFIRMATION") {
+      try {
+        await notifyStatusChanged(
+          order.requesterId,
+          order.id,
+          order.title,
+          "WAITING_CONFIRMATION",
+          session.user.name || "Usuário"
+        )
+      } catch (err) {
+        console.error('Error notifying status change to requester:', err)
+      }
     }
 
     return NextResponse.json(order)

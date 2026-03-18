@@ -22,6 +22,7 @@ interface Notification {
   title: string
   message: string
   read: boolean
+  silent: boolean
   createdAt: string
   order?: {
     id: string
@@ -141,12 +142,13 @@ export function NotificationBell() {
       const mergedMap: Notification[] = serverNotes.map((s) => {
         const local = (s.id && localById.get(s.id)) || localByFallback.get(fallbackKey(s))
         const read = local ? !!local.read : !!s.read
-        return { ...s, read }
+        const silent = s.silent ?? false
+        return { ...s, read, silent }
       })
 
       // Include any local-only notifications (e.g., tmp ids from socket) not present on server
       localNotes.forEach((ln) => {
-        if (!mergedMap.some((m) => m.id === ln.id)) {
+        if (!mergedMap.some((m: Notification) => m.id === ln.id)) {
           mergedMap.push(ln)
         }
       })
@@ -160,8 +162,11 @@ export function NotificationBell() {
       setUnreadCount(newUnread)
       try { saveCache(finalList, newUnread) } catch (e) { }
 
-      // Play sound if new unread increased
-      if (newUnread > previousUnreadCount) playSound()
+      // Play sound if new unread increased and at least one new notification is not silent
+      if (newUnread > previousUnreadCount) {
+        const newOnes = finalList.filter(n => !n.read).slice(0, newUnread - previousUnreadCount)
+        if (newOnes.some(n => !n.silent)) playSound()
+      }
       setPreviousUnreadCount(newUnread)
     } catch (error: any) {
       // Abort is expected on timeout; treat separately
@@ -288,6 +293,7 @@ export function NotificationBell() {
             title: incoming.title || 'Notificação',
             message: incoming.message || incoming.text || '',
             read: !!incoming.read,
+            silent: !!incoming.silent,
             createdAt: incoming.createdAt || new Date().toISOString(),
             order: incoming.order ? { id: incoming.order.id, title: incoming.order.title } : incoming.orderId ? { id: incoming.orderId, title: '' } : undefined,
           } as Notification
@@ -300,25 +306,12 @@ export function NotificationBell() {
           const inc = incoming.read ? 0 : 1
           return prev + inc
         })
+
+        // Play notification sound unless it's silent
+        if (!incoming.silent) playSound()
       } catch (err) {
         console.warn('[notifications] failed to insert incoming notification into state', err)
       }
-
-      // Log current unread & list length for debugging
-      try {
-        console.log('[notification-bell] after insert unreadCount:', unreadCount + 1, 'notifications length (approx):', notifications.length + 1)
-      } catch (logErr) {
-        console.warn('[notification-bell] debug log failed', logErr)
-      }
-
-      // We intentionally avoid re-fetching `/api/notifications` here because
-      // fetches triggered from inside the socket event handler have caused
-      // network failures (status 0) in some environments. The socket delivers
-      // the payload already so we update UI state above; polling will keep
-      // the client synced with the server in the background.
-
-      // Play notification sound
-      playSound()
     }
 
     console.log('[notifications] Subscribing to socket notification events')
