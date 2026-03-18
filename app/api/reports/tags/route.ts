@@ -69,12 +69,13 @@ export async function GET(request: NextRequest) {
       
       // Contagem por status
       const byStatus = {
-        NEW: orders.filter(o => o.status === "NEW").length,
-        IN_ANALYSIS: orders.filter(o => o.status === "IN_ANALYSIS").length,
-        IN_PROGRESS: orders.filter(o => o.status === "IN_PROGRESS").length,
-        WAITING_CLIENT: orders.filter(o => o.status === "WAITING_CLIENT").length,
-        FINISHED: orders.filter(o => o.status === "FINISHED").length,
-        CANCELLED: orders.filter(o => o.status === "CANCELLED").length,
+        NEW: orders.filter(o => (o.status as string) === "NEW").length,
+        IN_ANALYSIS: orders.filter(o => (o.status as string) === "IN_ANALYSIS").length,
+        IN_PROGRESS: orders.filter(o => (o.status as string) === "IN_PROGRESS").length,
+        WAITING_CLIENT: orders.filter(o => (o.status as string) === "WAITING_CLIENT").length,
+        WAITING_CONFIRMATION: orders.filter(o => (o.status as string) === "WAITING_CONFIRMATION").length,
+        FINISHED: orders.filter(o => (o.status as string) === "FINISHED").length,
+        CANCELLED: orders.filter(o => (o.status as string) === "CANCELLED").length,
       }
 
       // Contagem por prioridade

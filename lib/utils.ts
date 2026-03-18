@@ -58,6 +58,7 @@ export const statusColors = {
   IN_ANALYSIS: 'bg-yellow-100 text-yellow-800',
   IN_PROGRESS: 'bg-blue-100 text-blue-800',
   WAITING_CLIENT: 'bg-orange-100 text-orange-800',
+  WAITING_CONFIRMATION: 'bg-cyan-100 text-cyan-800',
   FINISHED: 'bg-green-100 text-green-800',
   CANCELLED: 'bg-gray-100 text-gray-800'
 }
@@ -67,6 +68,7 @@ export const statusLabels = {
   IN_ANALYSIS: 'Em Análise',
   IN_PROGRESS: 'Em Execução',
   WAITING_CLIENT: 'Aguardando Cliente',
+  WAITING_CONFIRMATION: 'Aguardando Confirmação',
   FINISHED: 'Finalizado',
   CANCELLED: 'Cancelado'
 }

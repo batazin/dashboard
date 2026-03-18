@@ -51,6 +51,7 @@ async function getDashboardData(userId: string, role: string) {
     inAnalysisOrders,
     inProgressOrders,
     waitingClientOrders,
+    waitingConfirmationOrders,
     cancelledOrders,
   ] = await Promise.all([
     prisma.order.count({ where: baseWhere }),
@@ -76,6 +77,7 @@ async function getDashboardData(userId: string, role: string) {
     prisma.order.count({ where: { ...baseWhere, status: "IN_ANALYSIS" } }),
     prisma.order.count({ where: { ...baseWhere, status: "IN_PROGRESS" } }),
     prisma.order.count({ where: { ...baseWhere, status: "WAITING_CLIENT" } }),
+    prisma.order.count({ where: { ...baseWhere, status: "WAITING_CONFIRMATION" } }),
     prisma.order.count({ where: { ...baseWhere, status: "CANCELLED" } }),
   ])
 
@@ -93,6 +95,7 @@ async function getDashboardData(userId: string, role: string) {
       IN_ANALYSIS: inAnalysisOrders,
       IN_PROGRESS: inProgressOrders,
       WAITING_CLIENT: waitingClientOrders,
+      WAITING_CONFIRMATION: waitingConfirmationOrders,
       FINISHED: finishedOrders,
       CANCELLED: cancelledOrders,
     }
@@ -244,6 +247,16 @@ export default async function DashboardPage() {
                 <span className="text-sm font-medium text-orange-800">Aguardando Cliente</span>
               </div>
               <span className="text-lg font-bold text-orange-600">{data.statusCounts.WAITING_CLIENT}</span>
+            </Link>
+            <Link 
+              href="/orders?status=WAITING_CONFIRMATION" 
+              className="flex items-center justify-between p-3 rounded-lg bg-cyan-50 hover:bg-cyan-100 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Clock className="h-4 w-4 text-cyan-600" />
+                <span className="text-sm font-medium text-cyan-800">Aguardando Confirmação</span>
+              </div>
+              <span className="text-lg font-bold text-cyan-600">{data.statusCounts.WAITING_CONFIRMATION}</span>
             </Link>
           </CardContent>
         </Card>
