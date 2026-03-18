@@ -50,6 +50,7 @@ export default function NewOrderPage() {
     priority: "MEDIUM",
     professionalId: "none",
     tags: [] as string[],
+    pageUrl: "",
   })
   const [newTag, setNewTag] = useState("")
   const [tagQuery, setTagQuery] = useState("")
@@ -277,6 +278,16 @@ export default function NewOrderPage() {
                 placeholder="Descreva detalhadamente o pedido..."
                 rows={5}
                 required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="pageUrl">Link da Página</Label>
+              <Input
+                id="pageUrl"
+                value={formData.pageUrl}
+                onChange={(e) => setFormData((prev) => ({ ...prev, pageUrl: e.target.value }))}
+                placeholder="Ex: https://dominio.com/pagina-do-produto"
               />
             </div>
 

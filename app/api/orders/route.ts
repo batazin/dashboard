@@ -222,6 +222,7 @@ export async function POST(request: NextRequest) {
     const createData: any = {
       title: validatedData.title,
       description: validatedData.description,
+      pageUrl: validatedData.pageUrl || null,
       priority: validatedData.priority,
       requesterId: requester.id,
       // only include professionalId when defined and not null

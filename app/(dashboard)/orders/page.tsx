@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Search, Filter, Plus, X } from "lucide-react"
+import { Search, Filter, Plus, X, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
@@ -21,6 +21,7 @@ interface Order {
   id: string
   title: string
   description: string
+  pageUrl?: string | null
   status: string
   priority: string
   createdAt: string
@@ -232,7 +233,12 @@ export default function OrdersPage() {
                 <CardContent className="p-4">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-lg truncate">{order.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg truncate">{order.title}</h3>
+                        {order.pageUrl && (
+                          <ExternalLink className="h-4 w-4 text-indigo-500 shrink-0" />
+                        )}
+                      </div>
                       <p className="text-gray-500 dark:text-gray-400 text-sm line-clamp-2 mt-1">
                         {order.description}
                       </p>

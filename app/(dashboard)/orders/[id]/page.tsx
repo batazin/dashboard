@@ -14,7 +14,8 @@ import {
   MessageSquare,
   Paperclip,
   Star,
-  History
+  History,
+  ExternalLink
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -605,6 +606,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                   <p className="font-medium">{order.requester.name || "Usuário"}</p>
                 </div>
               </div>
+
+              {order.pageUrl && (
+                <div className="flex items-center gap-3">
+                  <ExternalLink className="h-5 w-5 text-indigo-500" />
+                  <div className="overflow-hidden">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Página do Produto</p>
+                    <a 
+                      href={order.pageUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="text-sm font-medium text-indigo-600 hover:text-indigo-800 hover:underline truncate block"
+                    >
+                      {order.pageUrl.replace(/^https?:\/\//, '')}
+                    </a>
+                  </div>
+                </div>
+              )}
 
               {order.professional && (
                 <div className="flex items-center gap-3">

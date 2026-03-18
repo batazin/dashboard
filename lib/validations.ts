@@ -6,6 +6,7 @@ export const orderCreateSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']).default('MEDIUM'),
   tags: z.array(z.string()).optional(),
   professionalId: z.string().optional(),
+  pageUrl: z.string().url('Link inválido').or(z.literal('')).optional(),
 })
 
 export const orderUpdateSchema = z.object({
@@ -15,6 +16,7 @@ export const orderUpdateSchema = z.object({
   status: z.enum(['NEW', 'IN_ANALYSIS', 'IN_PROGRESS', 'WAITING_CLIENT', 'FINISHED', 'CANCELLED']).optional(),
   tags: z.array(z.string()).optional(),
   professionalId: z.string().nullable().optional(),
+  pageUrl: z.string().url('Link inválido').or(z.literal('')).optional(),
   statusObservation: z.string().optional(),
 })
 

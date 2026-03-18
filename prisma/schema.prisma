@@ -136,6 +136,7 @@ model Order {
   id            String        @id @default(cuid())
   title         String
   description   String        @db.Text
+  pageUrl       String?       
   priority      Priority      @default(MEDIUM)
   status        OrderStatus   @default(NEW)
   

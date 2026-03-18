@@ -104,6 +104,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       ...(validatedData.description && { description: validatedData.description }),
       ...(validatedData.priority && { priority: validatedData.priority }),
       ...(validatedData.status && { status: validatedData.status }),
+      ...(validatedData.pageUrl !== undefined && { pageUrl: validatedData.pageUrl || null }),
       ...(validatedData.professionalId !== undefined && { 
         professionalId: validatedData.professionalId 
       }),
