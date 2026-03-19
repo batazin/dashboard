@@ -33,6 +33,8 @@ const DEFAULT_TAG_COLORS: Record<string, string> = {
   "BLACK NOVEMBER": "#000000",
   "PS lifehack": "#FF9800",
   "Ortopedia": "#009688",
+  "Semiextensivo": "#880E4F",
+  "Internato": "#006064",
 }
 
 // GET /api/orders - List orders with filters
