@@ -123,6 +123,8 @@ export const PREDEFINED_TAGS = [
   { name: "UROLOGIA", color: "#1A237E", textColor: "#FFFFFF" },
   { name: "Concursus", color: "#0D47A1", textColor: "#FFFFFF" },
   { name: "BLACK NOVEMBER", color: "#000000", textColor: "#FFFFFF" },
+  { name: "PS lifehack", color: "#FF9800", textColor: "#FFFFFF" },
+  { name: "Ortopedia", color: "#009688", textColor: "#FFFFFF" },
 ]
 
 export function getTagStyles(tagName: string, fallbackColor?: string) {

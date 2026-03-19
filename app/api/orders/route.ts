@@ -31,6 +31,8 @@ const DEFAULT_TAG_COLORS: Record<string, string> = {
   "UROLOGIA": "#1A237E",
   "Concursus": "#0D47A1",
   "BLACK NOVEMBER": "#000000",
+  "PS lifehack": "#FF9800",
+  "Ortopedia": "#009688",
 }
 
 // GET /api/orders - List orders with filters
