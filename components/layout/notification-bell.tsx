@@ -35,7 +35,7 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
-  const previousUnreadCountRef = useRef(0)
+  const notifiedIdsRef = useRef<Set<string>>(new Set())
   const [serverReachable, setServerReachable] = useState(true)
   const { playSound } = useNotificationSound(true) // Habilitar som por padrão
   const { data: session } = useSession()
@@ -168,12 +168,14 @@ export function NotificationBell() {
       setUnreadCount(newUnread)
       try { saveCache(finalList, newUnread) } catch (e) { }
 
-      // Play sound if new unread increased and at least one new notification is not silent
-      if (newUnread > previousUnreadCountRef.current) {
-        const newOnes = finalList.filter(n => !n.read).slice(0, newUnread - previousUnreadCountRef.current)
-        if (newOnes.some(n => !n.silent)) playSound()
+      // In-memory track of already notified IDs to avoid repeat beeps for the same notification
+      const newUnreadNotes = finalList.filter(n => !n.read)
+      const toNotify = newUnreadNotes.filter(n => !notifiedIdsRef.current.has(n.id) && !n.silent)
+
+      if (toNotify.length > 0) {
+        playSound()
+        toNotify.forEach(n => notifiedIdsRef.current.add(n.id))
       }
-      previousUnreadCountRef.current = newUnread
     } catch (error: any) {
       // Abort is expected on timeout; treat separately
       if (error?.name === 'AbortError') {
@@ -197,17 +199,16 @@ export function NotificationBell() {
       console.log('[notifications] reading cache key:', CACHE_KEY, 'raw:', raw ? raw.slice(0, 200) : null)
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (parsed) {
-          if (parsed.ts && (Date.now() - parsed.ts) < CACHE_TTL_MS) {
-            console.log('[notifications] cache hydrated (within TTL) length:', (parsed.notifications || []).length, 'unread:', parsed.unreadCount)
-            setNotifications(parsed.notifications || [])
-            setUnreadCount(parsed.unreadCount || 0)
-          } else {
-            console.log('[notifications] cache present but expired or missing ts; hydrating anyway for UX', parsed)
-            // still hydrate for UX (in case server is unavailable)
-            setNotifications(parsed.notifications || [])
-            setUnreadCount(parsed.unreadCount || 0)
-          }
+        if (parsed && parsed.notifications) {
+          console.log('[notifications] cache hydrated; length:', (parsed.notifications || []).length, 'unread:', parsed.unreadCount)
+          // Initialize notifiedIds with cached unread IDs to prevent alerts on load for existing unread items
+          const cachedNotes: Notification[] = parsed.notifications || [];
+          cachedNotes.filter(n => !n.read).forEach(n => {
+            if (n.id) notifiedIdsRef.current.add(n.id)
+          });
+          
+          setNotifications(cachedNotes)
+          setUnreadCount(parsed.unreadCount || 0)
         }
       }
     } catch (e) {
@@ -318,8 +319,12 @@ export function NotificationBell() {
           return prev + inc
         })
 
-        // Play notification sound unless it's silent
-        if (!incoming.silent) playSound()
+        // Play notification sound unless it's silent or already notified
+        const derivedId = incoming.id || `tmp-${Date.now()}`
+        if (!incoming.silent && !notifiedIdsRef.current.has(derivedId)) {
+          playSound()
+          notifiedIdsRef.current.add(derivedId)
+        }
       } catch (err) {
         console.warn('[notifications] failed to insert incoming notification into state', err)
       }
