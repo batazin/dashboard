@@ -3,8 +3,14 @@ import { useRef } from 'react';
 export function useNotificationSound(enabled: boolean = true) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  const lastPlayedRef = useRef<number>(0);
   const playSound = () => {
     if (!enabled || typeof window === 'undefined') return;
+
+    // Throttle sound to at most once per 1000ms
+    const now = Date.now();
+    if (now - lastPlayedRef.current < 1000) return;
+    lastPlayedRef.current = now;
 
     try {
       // Usar Web Audio API para um beep simples

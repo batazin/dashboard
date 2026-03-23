@@ -35,11 +35,17 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
-  const [previousUnreadCount, setPreviousUnreadCount] = useState(0)
+  const previousUnreadCountRef = useRef(0)
   const [serverReachable, setServerReachable] = useState(true)
   const { playSound } = useNotificationSound(true) // Habilitar som por padrão
   const { data: session } = useSession()
   const { socket, isConnected } = useSocket()
+  const isConnectedRef = useRef(isConnected)
+  
+  useEffect(() => {
+    isConnectedRef.current = isConnected
+  }, [isConnected])
+
   const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const inProgressRef = useRef(false)
   const consecutiveFailsRef = useRef(0)
@@ -163,11 +169,11 @@ export function NotificationBell() {
       try { saveCache(finalList, newUnread) } catch (e) { }
 
       // Play sound if new unread increased and at least one new notification is not silent
-      if (newUnread > previousUnreadCount) {
-        const newOnes = finalList.filter(n => !n.read).slice(0, newUnread - previousUnreadCount)
+      if (newUnread > previousUnreadCountRef.current) {
+        const newOnes = finalList.filter(n => !n.read).slice(0, newUnread - previousUnreadCountRef.current)
         if (newOnes.some(n => !n.silent)) playSound()
       }
-      setPreviousUnreadCount(newUnread)
+      previousUnreadCountRef.current = newUnread
     } catch (error: any) {
       // Abort is expected on timeout; treat separately
       if (error?.name === 'AbortError') {
@@ -245,7 +251,12 @@ export function NotificationBell() {
         clearTimeout(abortTimeout)
         inProgressRef.current = false
       }
-      scheduleNext(pollIntervalMsRef.current)
+      // If we are now connected to socket, stop the polling chain here
+      if (!isConnectedRef.current) {
+        scheduleNext(pollIntervalMsRef.current)
+      } else {
+        console.log('[notifications] Polling chain stopped because socket is connected')
+      }
     }
 
     // Start looping
