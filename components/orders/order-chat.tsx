@@ -6,7 +6,7 @@ import { Send } from "lucide-react"
 import { useSocket } from "@/lib/socket"
 import { formatDate } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface Message {
@@ -160,8 +160,8 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
     }
   }, [socket, isConnected, session?.user?.id, joinOrder, leaveOrder, orderId])
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSendMessage = async (e?: React.FormEvent) => {
+    e?.preventDefault()
     if (!newMessage.trim() || sending) return
 
     setSending(true)
@@ -215,6 +215,13 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
     }
   }
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
   return (
     <div className="flex flex-col h-[400px] border rounded-lg">
       {/* Messages */}
@@ -264,15 +271,18 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSendMessage} className="border-t p-4">
+      <form onSubmit={(e) => handleSendMessage(e)} className="border-t p-4">
         <div className="flex gap-2">
-          <Input
+          <Textarea
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Digite sua mensagem..."
+            onKeyDown={handleKeyDown}
+            placeholder="Digite sua mensagem (Enter para enviar, Shift+Enter para pular linha)..."
             disabled={sending}
+            className="min-h-[40px] max-h-[120px] resize-none py-2"
+            rows={1}
           />
-          <Button type="submit" disabled={!newMessage.trim() || sending}>
+          <Button type="submit" disabled={!newMessage.trim() || sending} className="h-10">
             <Send className="h-4 w-4" />
           </Button>
         </div>
