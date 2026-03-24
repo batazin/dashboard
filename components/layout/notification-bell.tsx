@@ -15,6 +15,8 @@ import {
 import { useNotificationSound } from "@/hooks/use-notification-sound"
 import { useSocket } from "@/lib/socket"
 import { useSession } from "next-auth/react"
+import { useToast } from "@/hooks/use-toast"
+import { cn } from "@/lib/utils"
 
 interface Notification {
   id: string
@@ -35,11 +37,13 @@ export function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [open, setOpen] = useState(false)
+  const [isPulsing, setIsPulsing] = useState(false)
   const notifiedIdsRef = useRef<Set<string>>(new Set())
   const [serverReachable, setServerReachable] = useState(true)
   const { playSound } = useNotificationSound(true) // Habilitar som por padrão
   const { data: session } = useSession()
   const { socket, isConnected } = useSocket()
+  const { toast } = useToast()
   const isConnectedRef = useRef(isConnected)
   
   useEffect(() => {
@@ -174,7 +178,18 @@ export function NotificationBell() {
 
       if (toNotify.length > 0) {
         playSound()
-        toNotify.forEach(n => notifiedIdsRef.current.add(n.id))
+        setIsPulsing(true)
+        setTimeout(() => setIsPulsing(false), 3000)
+        
+        toNotify.forEach(n => {
+          notifiedIdsRef.current.add(n.id)
+          // Show toast for newly arrived notification
+          toast({
+            title: n.title,
+            description: n.message,
+            variant: "default",
+          })
+        })
       }
     } catch (error: any) {
       // Abort is expected on timeout; treat separately
@@ -323,7 +338,14 @@ export function NotificationBell() {
         const derivedId = incoming.id || `tmp-${Date.now()}`
         if (!incoming.silent && !notifiedIdsRef.current.has(derivedId)) {
           playSound()
+          setIsPulsing(true)
+          setTimeout(() => setIsPulsing(false), 3000)
           notifiedIdsRef.current.add(derivedId)
+          
+          toast({
+            title: incoming.title || "Nova notificação",
+            description: incoming.message || incoming.text || "",
+          })
         }
       } catch (err) {
         console.warn('[notifications] failed to insert incoming notification into state', err)
@@ -360,6 +382,17 @@ export function NotificationBell() {
       console.log('[notifications] Socket connected; resetting polling backoff')
     }
   }, [isConnected])
+
+  // Update document title with unread count
+  useEffect(() => {
+    if (typeof document === 'undefined') return
+    const originalTitle = "Dashboard" // Base title
+    if (unreadCount > 0) {
+      document.title = `(${unreadCount > 9 ? "9+" : unreadCount}) ${originalTitle}`
+    } else {
+      document.title = originalTitle
+    }
+  }, [unreadCount])
 
   // Persist notifications + unreadCount whenever they change (single source of truth)
   useEffect(() => {
@@ -434,12 +467,20 @@ export function NotificationBell() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="relative">
-          <Bell className="h-5 w-5" />
+        <Button variant="ghost" size="sm" className={cn("relative transition-all", isPulsing && "ring-2 ring-red-500 scale-110")}>
+          <Bell className={cn("h-5 w-5", isPulsing && "animate-bounce text-red-500")} />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
+            <span className={cn(
+              "absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full",
+              isPulsing && "animate-ping opacity-75"
+            )}>
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
+          )}
+          {unreadCount > 0 && isPulsing && (
+             <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
+               {unreadCount > 9 ? "9+" : unreadCount}
+             </span>
           )}
         </Button>
       </DropdownMenuTrigger>
