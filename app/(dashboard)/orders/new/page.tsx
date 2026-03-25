@@ -21,8 +21,8 @@ import Link from "next/link"
 
 interface Professional {
   id: string
-  user: { 
-    name: string | null; 
+  user: {
+    name: string | null;
     email?: string | null;
     managedTags?: { name: string }[]
   }
@@ -38,12 +38,12 @@ interface Tag {
 export default function NewOrderPage() {
   const router = useRouter()
   const { toast } = useToast()
-  
+
   const [loading, setLoading] = useState(false)
   const [professionals, setProfessionals] = useState<Professional[]>([])
   const [existingTags, setExistingTags] = useState<Tag[]>([])
   const [userManagedTags, setUserManagedTags] = useState<string[]>([])
-  
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -89,7 +89,7 @@ export default function NewOrderPage() {
     }
 
     try {
-      // fetch professional details (includes status and substitute fields)
+      // fetch professional details (includes status a
       const res = await fetch(`/api/professionals/${value}`)
       if (!res.ok) throw new Error('Erro ao buscar profissional')
       const prof = await res.json()
@@ -136,7 +136,7 @@ export default function NewOrderPage() {
   }
 
   // Calculate recommended professionals based on selected tags
-  const recommendedProfessionals = professionals.filter(prof => 
+  const recommendedProfessionals = professionals.filter(prof =>
     prof.user.managedTags?.some(tag => formData.tags.includes(tag.name))
   )
 
@@ -437,10 +437,10 @@ export default function NewOrderPage() {
                   {professionals
                     .filter(p => !isRecommended(p.id))
                     .map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.user.name} - {prof.specialty}
-                    </SelectItem>
-                  ))}
+                      <SelectItem key={prof.id} value={prof.id}>
+                        {prof.user.name} - {prof.specialty}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               {substituteNotice && (

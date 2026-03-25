@@ -69,6 +69,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showReassignDialog, setShowReassignDialog] = useState(false)
   const [showTagsDialog, setShowTagsDialog] = useState(false)
+  const [showEditDescriptionDialog, setShowEditDescriptionDialog] = useState(false)
   const [professionalsList, setProfessionalsList] = useState<any[]>([])
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null)
   const [reassignSubstituteNotice, setReassignSubstituteNotice] = useState<string | null>(null)
@@ -88,6 +89,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     statusObservation: "",
   })
 
+  const [editDescription, setEditDescription] = useState("")
+
   const [finishData, setFinishData] = useState({
     feedback: "",
     rating: 5,
@@ -100,6 +103,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       const data = await response.json()
       setOrder(data)
       setEditData({ status: data.status, statusObservation: "" })
+      setEditDescription(data.description)
     } catch (error) {
       toast({
         title: "Erro",
@@ -180,10 +184,55 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         description: "Status atualizado com sucesso",
         variant: "success",
       })
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erro",
-        description: "Não foi possível atualizar o status",
+        description: error.message || "Não foi possível atualizar o status",
+        variant: "destructive",
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleDescriptionChange = async () => {
+    if (!editDescription || editDescription.length < 10) {
+      toast({
+        title: "Erro",
+        description: "A descrição deve ter pelo menos 10 caracteres",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          description: editDescription,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erro ao atualizar")
+      }
+
+      const updated = await response.json()
+      setOrder(updated)
+      setShowEditDescriptionDialog(false)
+      
+      toast({
+        title: "Sucesso",
+        description: "Descrição atualizada com sucesso",
+        variant: "success",
+      })
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível atualizar a descrição",
         variant: "destructive",
       })
     } finally {
@@ -449,8 +498,42 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         <div className="lg:col-span-2 space-y-6">
           {/* Description */}
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle>Descrição</CardTitle>
+              {canEdit && (
+                <Dialog open={showEditDescriptionDialog} onOpenChange={setShowEditDescriptionDialog}>
+                  <DialogTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Edit className="h-4 w-4" />
+                      <span className="sr-only">Editar descrição</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>Editar Descrição</DialogTitle>
+                      <DialogDescription>
+                        Atualize a descrição detalhada do pedido.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Textarea
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        placeholder="Descreva o pedido em detalhes..."
+                        className="min-h-[200px]"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setShowEditDescriptionDialog(false)}>
+                        Cancelar
+                      </Button>
+                      <Button onClick={handleDescriptionChange} disabled={updating}>
+                        {updating ? "Salvando..." : "Salvar Alterações"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </CardHeader>
             <CardContent>
                 <p className="whitespace-pre-wrap">{order.description}</p>
