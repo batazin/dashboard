@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
-import { Send } from "lucide-react"
+import { Send, Image as ImageIcon, Loader2, X } from "lucide-react"
 import { useSocket } from "@/lib/socket"
-import { formatDate } from "@/lib/utils"
+import { formatDate, isValidFileType, isValidFileSize, MAX_FILE_SIZE, formatFileSize } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useToast } from "@/hooks/use-toast"
 
 interface Message {
   id: string
@@ -31,6 +32,9 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   const [messages, setMessages] = useState<Message[]>(initialMessages)
   const [newMessage, setNewMessage] = useState("")
   const [sending, setSending] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  const [previewImage, setPreviewImage] = useState<string | null>(null)
+  const { toast } = useToast()
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollStopTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -160,17 +164,113 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
     }
   }, [socket, isConnected, session?.user?.id, joinOrder, leaveOrder, orderId])
 
+  const uploadImage = async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+       toast({
+        title: "Erro",
+        description: "Tipo de arquivo não permitido. Apenas imagens são aceitas aqui.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!isValidFileSize(file.size)) {
+      toast({
+        title: "Erro",
+        description: `Arquivo muito grande. Máximo: ${formatFileSize(MAX_FILE_SIZE)}`,
+        variant: "destructive",
+      })
+      return
+    }
+
+    setSending(true)
+    const formData = new FormData()
+    formData.append("file", file)
+    formData.append("orderId", orderId)
+
+    try {
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      })
+
+      if (response.ok) {
+        const attachment = await response.json()
+        await sendMessageInternal(`![image](${attachment.url})`)
+      } else {
+        const data = await response.json()
+        toast({
+          title: "Erro no upload",
+          description: data.error || "Não foi possível enviar a imagem",
+          variant: "destructive",
+        })
+      }
+    } catch (err) {
+      console.error("Error uploading image:", err)
+      toast({
+        title: "Erro",
+        description: "Erro interno ao enviar imagem",
+        variant: "destructive",
+      })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData.items
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.indexOf("image") !== -1) {
+        const file = items[i].getAsFile()
+        if (file) {
+          uploadImage(file)
+        }
+      }
+    }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    
+    const files = Array.from(e.dataTransfer.files)
+    const imageFiles = files.filter(file => file.type.startsWith('image/'))
+    
+    if (imageFiles.length > 0) {
+      imageFiles.forEach(file => uploadImage(file))
+    }
+  }
+
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!newMessage.trim() || sending) return
+    
+    const content = newMessage
+    setNewMessage("")
+    await sendMessageInternal(content)
+  }
 
+  const sendMessageInternal = async (content: string) => {
     setSending(true)
 
     try {
       const response = await fetch(`/api/orders/${orderId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newMessage }),
+        body: JSON.stringify({ content }),
       })
 
       if (response.ok) {
@@ -180,12 +280,8 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
           if (prev.some((m) => m.id === message.id)) return prev
           return [...prev, message]
         })
-        setNewMessage("")
-        // Emit a lightweight notification event to the socket-server so the
-        // recipient receives an immediate notification even if the server
-        // side /emit-notification call is delayed or fails. We emit
-        // 'new-notification' (server handles broadcasting) — this does NOT
-        // broadcast 'new-message' so it won't cause duplicate messages.
+        
+        // Emit socket notification
         try {
           if (socket && recipientUserId) {
             const payload = {
@@ -193,16 +289,13 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
               notification: {
                 type: 'NEW_MESSAGE',
                 title: 'Nova mensagem',
-                message: message.content,
+                message: content.startsWith('![image]') ? 'Arquivo de imagem' : content,
                 orderId,
                 createdAt: message.createdAt,
                 actorId: session?.user?.id || null,
               },
             }
-            console.log('[order-chat] Emitting new-notification via socket', payload)
             socket.emit('new-notification', payload)
-          } else {
-            console.log('[order-chat] Skipping new-notification emit - no socket or recipientUserId', { socket: !!socket, recipientUserId })
           }
         } catch (err) {
           console.warn('[order-chat] Failed to emit new-notification via socket', err)
@@ -210,6 +303,11 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
       }
     } catch (error) {
       console.error("Error sending message:", error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a mensagem",
+        variant: "destructive",
+      })
     } finally {
       setSending(false)
     }
@@ -223,7 +321,20 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   }
 
   return (
-    <div className="flex flex-col h-[400px] border rounded-lg">
+    <div 
+      className={`flex flex-col h-[400px] border rounded-lg transition-colors relative ${isDragging ? "border-indigo-500 bg-indigo-50/10" : "border-gray-200"}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {isDragging && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-indigo-50/50 rounded-lg pointer-events-none">
+          <div className="flex flex-col items-center gap-2 p-4 bg-white rounded-xl shadow-lg border border-indigo-100">
+            <ImageIcon className="h-10 w-10 text-indigo-500 animate-bounce" />
+            <p className="font-semibold text-indigo-700">Solte para enviar a imagem</p>
+          </div>
+        </div>
+      )}
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
@@ -260,7 +371,19 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
                         : "bg-gray-100 text-gray-900"
                     }`}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.content.startsWith('![image](') ? (
+                      <div className="space-y-1">
+                        <img 
+                          src={message.content.match(/!\[image\]\((.*?)\)/)?.[1]} 
+                          alt="Enviada no chat" 
+                          className="max-w-full max-h-[300px] rounded-md cursor-pointer hover:opacity-95 transition-opacity bg-white"
+                          onClick={() => setPreviewImage(message.content.match(/!\[image\]\((.*?)\)/)?.[1] || null)}
+                        />
+                        <p className="text-[10px] opacity-70 text-right italic">Clique para ampliar</p>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -277,16 +400,43 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Digite sua mensagem (Enter para enviar, Shift+Enter para pular linha)..."
+            onPaste={handlePaste}
+            placeholder="Digite sua mensagem (Arraste ou cole imagens aqui)..."
             disabled={sending}
             className="min-h-[40px] max-h-[120px] resize-none py-2"
             rows={1}
           />
-          <Button type="submit" disabled={!newMessage.trim() || sending} className="h-10">
-            <Send className="h-4 w-4" />
+          <Button type="submit" disabled={(!newMessage.trim() && !sending) || sending} className="h-10">
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
       </form>
+      
+      {/* Imagem Preview Modal */}
+      {previewImage && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in duration-200"
+          onClick={() => setPreviewImage(null)}
+        >
+          <div 
+            className="relative max-w-5xl w-full max-h-screen flex items-center justify-center p-2"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img 
+              src={previewImage} 
+              alt="Preview" 
+              className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl scale-in-95 animate-in duration-200 bg-white"
+            />
+            <button 
+              className="absolute -top-10 right-0 md:-right-10 text-white hover:text-gray-300 transition-colors p-2"
+              onClick={() => setPreviewImage(null)}
+              aria-label="Fechar"
+            >
+              <X className="h-8 w-8" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
