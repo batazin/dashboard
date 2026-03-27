@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { StatusBadge, PriorityBadge } from "@/components/orders/status-badge"
-import { formatDate, statusLabels, priorityLabels } from "@/lib/utils"
+import { formatDate, statusLabels, priorityLabels, getNeonStyles } from "@/lib/utils"
 
 interface Order {
   id: string
@@ -265,7 +265,7 @@ export default function OrdersPage() {
                             <span
                               key={tag.id}
                               className="px-2 py-0.5 text-xs rounded-full"
-                              style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                              style={getNeonStyles(tag.color)}
                             >
                               {tag.name}
                             </span>

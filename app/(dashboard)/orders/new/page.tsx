@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { priorityLabels, cn, PREDEFINED_TAGS, getTagStyles } from "@/lib/utils"
+import { priorityLabels, cn, PREDEFINED_TAGS, getTagStyles, getNeonStyles } from "@/lib/utils"
 import { ArrowLeft, X } from "lucide-react"
 import Link from "next/link"
 
@@ -380,7 +380,7 @@ export default function NewOrderPage() {
                           type="button"
                           onClick={() => selectExistingTag(tag.name)}
                           className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-full font-medium transition-opacity hover:opacity-90"
-                          style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                          style={getNeonStyles(tag.color)}
                         >
                           + {tag.name}
                         </button>

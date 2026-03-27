@@ -131,15 +131,54 @@ export const PREDEFINED_TAGS = [
 
 export function getTagStyles(tagName: string, fallbackColor?: string) {
   const predefined = PREDEFINED_TAGS.find(t => t.name.toUpperCase() === tagName.toUpperCase())
-  if (predefined) {
-    return {
-      backgroundColor: predefined.color,
-      color: predefined.textColor
-    }
-  }
-  const color = fallbackColor || "#6366f1"
+  const color = predefined ? predefined.color : (fallbackColor || "#6366f1")
+  return getNeonStyles(color)
+}
+
+// Auxiliar function to lighten colors for better neon effect on dark background
+export function lightenColor(hex: string, percent: number): string {
+  // Remove hash
+  hex = hex.replace(/^#/, '')
+  
+  // Parse HEX
+  let r = parseInt(hex.substring(0, 2), 16)
+  let g = parseInt(hex.substring(2, 4), 16)
+  let b = parseInt(hex.substring(4, 6), 16)
+  
+  // Lighten
+  r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)))
+  g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)))
+  b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)))
+  
+  // Convert back to HEX
+  const rr = r.toString(16).padStart(2, '0')
+  const gg = g.toString(16).padStart(2, '0')
+  const bb = b.toString(16).padStart(2, '0')
+  
+  return `#${rr}${gg}${bb}`
+}
+
+export function getNeonStyles(color: string) {
+  // If the color is very dark, lighten it for the neon effect
+  const hex = color.replace(/^#/, '')
+  const r = parseInt(hex.substring(0, 2), 16)
+  const g = parseInt(hex.substring(2, 4), 16)
+  const b = parseInt(hex.substring(4, 6), 16)
+  
+  // Perceived brilliance / luminance
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b)
+  const isDark = luminance < 100 // Threshold for brightening
+  
+  // Use a brighter version for the glow and text in dark mode
+  const vibrantColor = isDark ? lightenColor(color, 60) : color
+  
   return {
-    backgroundColor: color + "15",
-    color: color
+    backgroundColor: color + "15", // low opacity background
+    color: vibrantColor,
+    border: `1px solid ${vibrantColor}40`,
+    boxShadow: `0 0 10px ${vibrantColor}20, inset 0 0 5px ${vibrantColor}10`,
+    textShadow: `0 0 5px ${vibrantColor}40`,
+    fontWeight: "600" as const,
+    transition: "all 0.2s ease",
   }
 }

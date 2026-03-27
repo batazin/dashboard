@@ -49,6 +49,7 @@ import {
   formatFileSize,
   professionalStatusLabels,
   professionalStatusColors,
+  getNeonStyles,
 } from "@/lib/utils"
 
 interface OrderDetailPageProps {
@@ -579,8 +580,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                                         if (active) setSelectedTags((s) => s.filter((x) => x !== tag.name))
                                         else setSelectedTags((s) => [...s, tag.name])
                                       }}
-                                      className={`px-3 py-1 text-sm rounded-full font-medium transition-colors ${active ? 'ring-2 ring-offset-1' : ''}`}
-                                      style={{ backgroundColor: tag.color + (active ? '40' : '20'), color: tag.color }}
+                                      className={`px-3 py-1 text-sm rounded-full font-medium transition-all ${active ? 'scale-105' : ''}`}
+                                      style={getNeonStyles(tag.color)}
                                     >
                                       {active ? '✓ ' : '+ '}{tag.name}
                                     </button>
@@ -624,7 +625,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                       <span
                         key={tag.id}
                         className="inline-flex items-center gap-2 px-3 py-1 text-sm rounded-full"
-                        style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                        style={getNeonStyles(tag.color)}
                       >
                         {tag.name}
                       </span>
