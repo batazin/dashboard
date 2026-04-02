@@ -22,7 +22,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Arquivo não encontrado" }, { status: 404 })
     }
 
-    const uploadDir = process.env.UPLOAD_DIR || "./uploads"
+    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
     const filepath = path.join(uploadDir, orderId, filename)
 
     try {

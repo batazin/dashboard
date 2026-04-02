@@ -39,7 +39,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const pollStopTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const POLL_INTERVAL_MS = 3000
-  const POLL_STOP_AFTER_MS = 10 * 60 * 1000 // stop polling after 10 minutes by default
+  const POLL_STOP_AFTER_MS = 10 * 60 * 1000 // stop polling after 10 minutes" by default
   const prevMessagesLengthRef = useRef(initialMessages.length)
   const isFirstLoadRef = useRef(true)
   const { socket, isConnected, joinOrder, leaveOrder, sendMessage: sendSocketMessage } = useSocket()
@@ -55,7 +55,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
       prevMessagesLengthRef.current = messages.length
       return
     }
-    
+
     // Só scroll se houver mais mensagens que antes
     if (messages.length > prevMessagesLengthRef.current) {
       scrollToBottom()
@@ -166,7 +166,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
 
   const uploadImage = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-       toast({
+      toast({
         title: "Erro",
         description: "Tipo de arquivo não permitido. Apenas imagens são aceitas aqui.",
         variant: "destructive",
@@ -245,10 +245,10 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
     e.preventDefault()
     e.stopPropagation()
     setIsDragging(false)
-    
+
     const files = Array.from(e.dataTransfer.files)
     const imageFiles = files.filter(file => file.type.startsWith('image/'))
-    
+
     if (imageFiles.length > 0) {
       imageFiles.forEach(file => uploadImage(file))
     }
@@ -257,7 +257,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   const handleSendMessage = async (e?: React.FormEvent) => {
     e?.preventDefault()
     if (!newMessage.trim() || sending) return
-    
+
     const content = newMessage
     setNewMessage("")
     await sendMessageInternal(content)
@@ -280,7 +280,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
           if (prev.some((m) => m.id === message.id)) return prev
           return [...prev, message]
         })
-        
+
         // Emit socket notification
         try {
           if (socket && recipientUserId) {
@@ -321,7 +321,7 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   }
 
   return (
-    <div 
+    <div
       className={`flex flex-col h-[400px] border rounded-lg transition-colors relative ${isDragging ? "border-indigo-500 bg-indigo-50/10" : "border-gray-200"}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -365,17 +365,16 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
                     </span>
                   </div>
                   <div
-                    className={`inline-block px-4 py-2 rounded-lg ${
-                      isOwn
+                    className={`inline-block px-4 py-2 rounded-lg ${isOwn
                         ? "bg-indigo-600 text-white"
                         : "bg-gray-100 text-gray-900"
-                    }`}
+                      }`}
                   >
                     {message.content.startsWith('![image](') ? (
                       <div className="space-y-1">
-                        <img 
-                          src={message.content.match(/!\[image\]\((.*?)\)/)?.[1]} 
-                          alt="Enviada no chat" 
+                        <img
+                          src={message.content.match(/!\[image\]\((.*?)\)/)?.[1]}
+                          alt="Enviada no chat"
                           className="max-w-full max-h-[300px] rounded-md cursor-pointer hover:opacity-95 transition-opacity bg-white"
                           onClick={() => setPreviewImage(message.content.match(/!\[image\]\((.*?)\)/)?.[1] || null)}
                         />
@@ -411,23 +410,23 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
           </Button>
         </div>
       </form>
-      
+
       {/* Imagem Preview Modal */}
       {previewImage && (
-        <div 
+        <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 transition-all animate-in fade-in duration-200"
           onClick={() => setPreviewImage(null)}
         >
-          <div 
+          <div
             className="relative max-w-5xl w-full max-h-screen flex items-center justify-center p-2"
             onClick={(e) => e.stopPropagation()}
           >
-            <img 
-              src={previewImage} 
-              alt="Preview" 
+            <img
+              src={previewImage}
+              alt="Preview"
               className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl scale-in-95 animate-in duration-200 bg-white"
             />
-            <button 
+            <button
               className="absolute -top-10 right-0 md:-right-10 text-white hover:text-gray-300 transition-colors p-2"
               onClick={() => setPreviewImage(null)}
               aria-label="Fechar"

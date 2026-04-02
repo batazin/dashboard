@@ -62,37 +62,56 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
     }
 
-    // Generate unique filename
-    const ext = path.extname(file.name)
+    // Generate unique filename and ensure extension
+    const ext = path.extname(file.name) || (file.type === "image/png" ? ".png" : file.type === "image/jpeg" ? ".jpg" : ".bin")
     const filename = `${uuidv4()}${ext}`
     
-    // Create uploads directory if it doesn't exist
-    const uploadDir = process.env.UPLOAD_DIR || "./uploads"
+    // Create uploads directory if it doesn't exist - use absolute path with process.cwd()
+    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
     const orderDir = path.join(uploadDir, orderId)
-    await mkdir(orderDir, { recursive: true })
+    
+    try {
+      await mkdir(orderDir, { recursive: true })
+    } catch (err: any) {
+      console.error("Error creating directory:", err)
+      return NextResponse.json({ error: `Erro ao criar diretório de upload: ${err.message}` }, { status: 500 })
+    }
 
     // Save file
     const filepath = path.join(orderDir, filename)
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
+    try {
+      const bytes = await file.arrayBuffer()
+      const buffer = Buffer.from(bytes)
+      await writeFile(filepath, buffer)
+    } catch (err: any) {
+      console.error("Error writing file:", err)
+      return NextResponse.json({ error: `Erro ao salvar arquivo no disco: ${err.message}` }, { status: 500 })
+    }
 
     // Create attachment record
-    const attachment = await prisma.attachment.create({
-      data: {
-        filename,
-        originalName: file.name,
-        mimeType: file.type,
-        size: file.size,
-        url: `/api/uploads/${orderId}/${filename}`,
-        orderId,
-      },
-    })
+    try {
+      const attachment = await prisma.attachment.create({
+        data: {
+          filename,
+          originalName: file.name || "pasted-image",
+          mimeType: file.type,
+          size: file.size,
+          url: `/api/uploads/${orderId}/${filename}`,
+          orderId,
+        },
+      })
 
-    return NextResponse.json(attachment, { status: 201 })
-  } catch (error) {
-    console.error("Error uploading file:", error)
-    return NextResponse.json({ error: "Erro ao fazer upload" }, { status: 500 })
+      return NextResponse.json(attachment, { status: 201 })
+    } catch (err: any) {
+      console.error("Error creating attachment record:", err)
+      return NextResponse.json({ error: `Erro ao registrar anexo no banco de dados: ${err.message}` }, { status: 500 })
+    }
+  } catch (error: any) {
+    console.error("Critical error uploading file:", error)
+    return NextResponse.json({ 
+      error: "Erro inesperado ao fazer upload", 
+      details: error.message 
+    }, { status: 500 })
   }
 }
 
@@ -132,7 +151,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete file from disk
-    const uploadDir = process.env.UPLOAD_DIR || "./uploads"
+    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
     const filepath = path.join(uploadDir, attachment.orderId, attachment.filename)
     
     try {
