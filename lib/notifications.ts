@@ -1,5 +1,6 @@
-import prisma from "@/lib/prisma"
-import { emitNotification as emitNotificationServerClient } from './socketServerClient'
+import { pusherServer } from './pusher'
+import prisma from './prisma'
+
 
 type NotificationType = "ORDER_ASSIGNED" | "ORDER_STATUS_CHANGED" | "NEW_MESSAGE" | "ORDER_FINISHED"
 
@@ -33,31 +34,12 @@ export async function createNotification({
     })
     
     console.log(`✅ Notification created for user ${userId}: ${title}`)
-    // Attempt to notify the socket-server so connected clients get realtime updates
+    // Push realtime notification via Pusher
     try {
-      const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || 'http://localhost:3001'
-      // First try HTTP endpoint
-      let res: Response | null = null
-      try {
-        res = await fetch(`${SOCKET_SERVER_URL}/emit-notification`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId, notification }),
-        })
-      } catch (err) {
-        // If HTTP fails, fallback to server-side socket client emit, which attempts a direct socket.io connection
-        const ok = await emitNotificationServerClient(userId, notification)
-        if (!ok) throw err
-      }
-      if (res && !res.ok) {
-        const txt = await res.text().catch(() => '')
-        console.warn('🚨 /emit-notification responded with non-OK', { status: res.status, text: txt })
-      } else {
-        console.log('📣 /emit-notification sent to socket server for user', userId)
-      }
+      await pusherServer.trigger(`user-${userId}`, 'new-notification', notification)
+      console.log('📣 Pusher notification sent to user', userId)
     } catch (emitErr) {
-      // Don't fail if socket-server is not reachable; dev logs are helpful
-      console.warn('🚨 Failed to emit notification to socket server', emitErr)
+      console.warn('🚨 Failed to trigger Pusher event for notification', emitErr)
     }
 
     return notification

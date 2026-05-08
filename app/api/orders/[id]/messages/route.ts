@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { messageSchema } from "@/lib/validations"
 import { notifyNewMessage } from "@/lib/notifications"
-import { emitMessage as emitMessageServerClient, emitNotification as emitNotificationServerClient } from "@/lib/socketServerClient"
+import { pusherServer } from "@/lib/pusher"
 
 type RouteParams = { params: Promise<{ id: string }> }
 
@@ -116,90 +116,41 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           })
           if (professional?.user) {
             console.log(`🔔 Creating notification for professional ${professional.user.id} about new message in order ${id}`)
-            const notification = await notifyNewMessage(
+            await notifyNewMessage(
               professional.user.id,
               id,
               order.title,
               session.user.name || "Usuário"
             )
-            if (notification) {
-              console.log(`✅ Message notification created: ${notification.id}`)
-            }
-            // If notification was created, try to inform socket-server directly as well and log response
-              try {
-                const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || 'http://localhost:3001'
-                const payload = { userId: professional.user.id, notification: { ...notification, actorId: session.user.id } }
-                const emitRes = await fetch(`${SOCKET_SERVER_URL}/emit-notification`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload),
-                })
-                console.log('/emit-notification call result:', { status: emitRes.status })
-                if (!emitRes.ok) {
-                  console.warn('/emit-notification non-OK, trying socket client fallback')
-                  await emitNotificationServerClient(professional.user.id, notification)
-                }
-              } catch (err) {
-                console.warn('Failed to call socket-server /emit-notification for message notification, trying socket client fallback', err)
-                await emitNotificationServerClient(professional.user.id, notification)
-              }
           }
         }
       } else if (session.user.role === "PROFESSIONAL") {
+
         // Notify the requester
         const requester = await prisma.user.findUnique({
           where: { id: order.requesterId },
         })
         if (requester) {
           console.log(`🔔 Creating notification for requester ${order.requesterId} about new message in order ${id}`)
-          const notification = await notifyNewMessage(
+          await notifyNewMessage(
             order.requesterId,
             id,
             order.title,
             session.user.name || "Profissional"
           )
-          if (notification) {
-            console.log(`✅ Message notification created: ${notification.id}`)
-          }
-          try {
-            const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || 'http://localhost:3001'
-                const payload = { userId: order.requesterId, notification: { ...notification, actorId: session.user.id } }
-                const emitRes = await fetch(`${SOCKET_SERVER_URL}/emit-notification`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload),
-                })
-            console.log('/emit-notification call result:', { status: emitRes.status })
-            if (!emitRes.ok) {
-              console.warn('/emit-notification non-OK, trying socket client fallback')
-              await emitNotificationServerClient(order.requesterId, notification)
-            }
-          } catch (err) {
-            console.warn('Failed to call socket-server /emit-notification for message notification, trying socket client fallback', err)
-            await emitNotificationServerClient(order.requesterId, notification)
-          }
         }
       }
+
     } catch (notificationError) {
       console.error("❌ Error creating notification:", notificationError)
       // Don't fail the message creation if notification fails
     }
 
-    // Try to notify socket server to broadcast the new message in realtime
+    // Push realtime update via Pusher
     try {
-      const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || 'http://localhost:3001'
-      const emitRes = await fetch(`${SOCKET_SERVER_URL}/emit-message`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: id, message }),
-      })
-      if (!emitRes.ok) {
-        console.warn('/emit-message non-OK, trying socket client fallback')
-        await emitMessageServerClient(id, message)
-      }
+      await pusherServer.trigger(`order-${id}`, "new-message", message)
     } catch (err) {
-      console.warn('Failed to emit new message to socket server, trying socket client fallback', err)
-      await emitMessageServerClient(id, message)
+      console.warn('Failed to trigger Pusher event for new message', err)
     }
 
     return NextResponse.json(message, { status: 201 })

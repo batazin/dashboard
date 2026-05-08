@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { useSession } from "next-auth/react"
 import { Send, Image as ImageIcon, Loader2, X } from "lucide-react"
-import { useSocket } from "@/lib/socket"
+import { pusherClient } from "@/lib/pusher"
 import { formatDate, isValidFileType, isValidFileSize, MAX_FILE_SIZE, formatFileSize } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -36,19 +36,14 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
   const [previewImage, setPreviewImage] = useState<string | null>(null)
   const { toast } = useToast()
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null)
-  const pollStopTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const POLL_INTERVAL_MS = 3000
-  const POLL_STOP_AFTER_MS = 10 * 60 * 1000 // stop polling after 10 minutes" by default
   const prevMessagesLengthRef = useRef(initialMessages.length)
   const isFirstLoadRef = useRef(true)
-  const { socket, isConnected, joinOrder, leaveOrder, sendMessage: sendSocketMessage } = useSocket()
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
-  // Só faz scroll quando há novas mensagens (não no polling inicial)
+  // Só faz scroll quando há novas mensagens
   useEffect(() => {
     if (isFirstLoadRef.current) {
       isFirstLoadRef.current = false
@@ -56,113 +51,42 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
       return
     }
 
-    // Só scroll se houver mais mensagens que antes
     if (messages.length > prevMessagesLengthRef.current) {
       scrollToBottom()
     }
     prevMessagesLengthRef.current = messages.length
   }, [messages])
 
-  // Polling for new messages (simple realtime solution)
+  // Setup Pusher Realtime
   useEffect(() => {
+    const channel = pusherClient.subscribe(`order-${orderId}`)
+
+    channel.bind("new-message", (msg: Message) => {
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === msg.id)) return prev
+        return [...prev, msg]
+      })
+    })
+
+    // Initial fetch to make sure we didn't miss anything before sub
     const fetchMessages = async () => {
       try {
         const response = await fetch(`/api/orders/${orderId}/messages`)
         if (response.ok) {
           const data: Message[] = await response.json()
-          // Ensure we keep unique messages by id to avoid UI duplicates
           const unique = Array.from(new Map(data.map(m => [m.id, m])).values())
           setMessages(unique)
         }
-      } catch (error) {
-        console.error("Error fetching messages:", error)
+      } catch (err) {
+        console.error("Error fetching initial messages:", err)
       }
     }
-
-    // Poll every POLL_INTERVAL_MS
-    if (!pollIntervalRef.current) {
-      pollIntervalRef.current = setInterval(fetchMessages, POLL_INTERVAL_MS)
-    }
-
-    // Stop polling after a set timeout to avoid long-lived polling
-    if (!pollStopTimeoutRef.current) {
-      pollStopTimeoutRef.current = setTimeout(() => {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current)
-          pollIntervalRef.current = null
-          console.log(`Stopped polling for order ${orderId} after ${POLL_STOP_AFTER_MS}ms`)
-        }
-      }, POLL_STOP_AFTER_MS)
-    }
+    fetchMessages()
 
     return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current)
-        pollIntervalRef.current = null
-      }
-      if (pollStopTimeoutRef.current) {
-        clearTimeout(pollStopTimeoutRef.current)
-        pollStopTimeoutRef.current = null
-      }
+      pusherClient.unsubscribe(`order-${orderId}`)
     }
   }, [orderId])
-
-  // If the socket connects, we can stop polling early and rely on realtime messages
-  useEffect(() => {
-    if (isConnected && pollIntervalRef.current) {
-      clearInterval(pollIntervalRef.current)
-      pollIntervalRef.current = null
-      if (pollStopTimeoutRef.current) {
-        clearTimeout(pollStopTimeoutRef.current)
-        pollStopTimeoutRef.current = null
-      }
-      console.log(`Socket connected; stopped polling for order ${orderId}`)
-    }
-    // If socket disconnects and polling was previously stopped, restart polling for a short period
-    if (!isConnected && !pollIntervalRef.current) {
-      // start polling again for a limited time to keep UI reasonably up-to-date
-      pollIntervalRef.current = setInterval(async () => {
-        try {
-          const response = await fetch(`/api/orders/${orderId}/messages`)
-          if (response.ok) setMessages(await response.json())
-        } catch (err) {
-          console.error('Error fetching messages in reconnect polling', err)
-        }
-      }, POLL_INTERVAL_MS)
-
-      if (!pollStopTimeoutRef.current) {
-        pollStopTimeoutRef.current = setTimeout(() => {
-          if (pollIntervalRef.current) {
-            clearInterval(pollIntervalRef.current)
-            pollIntervalRef.current = null
-            console.log(`Stopped reconnect polling for order ${orderId} after ${POLL_STOP_AFTER_MS}ms`)
-          }
-        }, POLL_STOP_AFTER_MS)
-      }
-    }
-  }, [isConnected, orderId])
-
-  // Join the order room via socket to receive realtime messages/typing
-  useEffect(() => {
-    if (!isConnected || !socket) return
-    if (!session?.user?.id) return
-    joinOrder(orderId, session.user.id)
-    console.log('Joined order room via socket:', orderId, session.user.id)
-    const handleNewMessage = (msg: any) => {
-      // Avoid duplicates
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === msg.id)) return prev
-        return [...prev, msg]
-      })
-    }
-
-    socket.on('new-message', handleNewMessage)
-
-    return () => {
-      socket.off('new-message', handleNewMessage)
-      leaveOrder(orderId)
-    }
-  }, [socket, isConnected, session?.user?.id, joinOrder, leaveOrder, orderId])
 
   const uploadImage = async (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -281,27 +205,9 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
           return [...prev, message]
         })
 
-        // Emit socket notification
-        try {
-          if (socket && recipientUserId) {
-            const payload = {
-              userId: recipientUserId,
-              notification: {
-                type: 'NEW_MESSAGE',
-                title: 'Nova mensagem',
-                message: content.startsWith('![image]') ? 'Arquivo de imagem' : content,
-                orderId,
-                createdAt: message.createdAt,
-                actorId: session?.user?.id || null,
-              },
-            }
-            socket.emit('new-notification', payload)
-          }
-        } catch (err) {
-          console.warn('[order-chat] Failed to emit new-notification via socket', err)
-        }
       }
     } catch (error) {
+
       console.error("Error sending message:", error)
       toast({
         title: "Erro",

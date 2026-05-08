@@ -30,7 +30,6 @@ import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { NotificationBell } from "./notification-bell"
 import { ThemeToggle } from "./theme-toggle"
-import { useSocket } from "@/lib/socket"
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -45,7 +44,6 @@ export function Sidebar() {
   const { data: session } = useSession()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
-  const { isConnected } = useSocket()
   const { toast } = useToast()
 
   return (
@@ -117,39 +115,6 @@ export function Sidebar() {
               <span className="font-semibold text-lg">Dashboard</span>
             </div>
             <div className="flex items-center gap-2">
-              <div 
-                className={cn(
-                  "h-2.5 w-2.5 rounded-full transition-all duration-500",
-                  isConnected 
-                    ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" 
-                    : (process.env.NODE_ENV === 'production' 
-                        ? "bg-green-500/80 shadow-[0_0_8px_rgba(34,197,94,0.4)]" // In production we show green (polling active)
-                        : "bg-red-400")
-                )} 
-                title={isConnected ? 'Socket conectado' : (process.env.NODE_ENV === 'production' ? 'Sistema Online (Modo Otimizado)' : 'Socket desconectado')} 
-              />
-              {!isConnected && process.env.NODE_ENV === 'development' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  title="Start Socket Server"
-                  onClick={async () => {
-                    try {
-                      const res = await fetch('/api/socket/start', { method: 'POST' })
-                      const data = await res.json().catch(() => ({}))
-                      if (res.ok) {
-                        toast({ title: 'Socket server iniciado (ou já rodando)', description: 'Verifique logs do terminal e atualize a página', variant: 'success' })
-                      } else {
-                        toast({ title: 'Falha ao iniciar socket server', description: data?.error || 'Erro desconhecido', variant: 'destructive' })
-                      }
-                    } catch (err) {
-                      toast({ title: 'Falha ao iniciar socket server', description: String(err), variant: 'destructive' })
-                    }
-                  }}
-                >
-                  <Play className="h-4 w-4" />
-                </Button>
-              )}
               <NotificationBell />
             </div>
           </div>

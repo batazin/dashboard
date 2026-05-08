@@ -12,11 +12,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useNotificationSound } from "@/hooks/use-notification-sound"
-import { useSocket } from "@/lib/socket"
+import { pusherClient } from "@/lib/pusher"
 import { useSession } from "next-auth/react"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useNotificationSound } from "@/hooks/use-notification-sound"
+
 
 interface Notification {
   id: string
@@ -39,349 +40,87 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [isPulsing, setIsPulsing] = useState(false)
   const notifiedIdsRef = useRef<Set<string>>(new Set())
-  const [serverReachable, setServerReachable] = useState(true)
-  const { playSound } = useNotificationSound(true) // Habilitar som por padrão
+  const { playSound } = useNotificationSound(true)
   const { data: session } = useSession()
-  const { socket, isConnected } = useSocket()
   const { toast } = useToast()
-  const isConnectedRef = useRef(isConnected)
   
-  useEffect(() => {
-    isConnectedRef.current = isConnected
-  }, [isConnected])
-
-  const pollTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const inProgressRef = useRef(false)
-  const consecutiveFailsRef = useRef(0)
-  const pollIntervalMsRef = useRef(5000)
-  const POLL_MIN_MS = 3000
-  const POLL_MAX_MS = 60000
-  const POLL_BACKOFF_FACTOR = 2
-  const pollStopTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const POLL_STOP_AFTER_MS = 10 * 60 * 1000
   const CACHE_KEY = 'notifications_cache_v1'
-  const CACHE_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 
   const saveCache = (notes?: Notification[], unread?: number) => {
     try {
-      const payload = { notifications: notes ?? notifications, unreadCount: typeof unread === 'number' ? unread : unreadCount, ts: Date.now() }
+      const payload = { 
+        notifications: notes ?? notifications, 
+        unreadCount: typeof unread === 'number' ? unread : unreadCount, 
+        ts: Date.now() 
+      }
       localStorage.setItem(CACHE_KEY, JSON.stringify(payload))
-      console.log('[notifications] cache saved (saveCache) length:', (payload.notifications || []).length, 'unread:', payload.unreadCount)
     } catch (e) {
       console.warn('[notifications] failed to save cache', e)
     }
   }
 
-  const fetchNotifications = async (signal?: AbortSignal) => {
+  const fetchNotifications = async () => {
     try {
-      const apiUrl = new URL('/api/notifications', window.location.origin).href
-      // Debugging info to help diagnose malformed URLs reported in browser
-      try {
-        console.log("[notifications] window.location.href:", window.location.href)
-        console.log("[notifications] window.location.origin:", window.location.origin)
-        console.log("[notifications] document.baseURI:", document.baseURI)
-        let base = document.querySelector('base')?.getAttribute('href') || document.baseURI
-        // If base contains duplicated host segments, ignore it in favor of window.location.origin
-        if (/(localhost:3000\/localhost:3000)|(127\.0\.0\.1:3000\/127\.0\.0\.1:3000)/.test(base)) {
-          console.warn('[notifications] Corrupted base detected; ignoring base and using window.location.origin for fetch')
-          base = window.location.origin
-        }
-        console.log("[notifications] base tag href:", base)
-        const resolved = new URL(apiUrl, base || window.location.href).href
-        console.log("[notifications] resolved absolute URL:", resolved)
-        if (resolved.includes('localhost:3000/localhost:3000')) {
-          console.error("[notifications] Resolved URL looks malformed, aborting fetch:", resolved)
-          return
-        }
-      } catch (err) {
-        console.warn("[notifications] Error while resolving URL for debug:", err)
+      const response = await fetch('/api/notifications')
+      if (response.ok) {
+        const data = await response.json()
+        const notes = data.notifications || []
+        setNotifications(notes)
+        setUnreadCount(data.unreadCount || 0)
+        saveCache(notes, data.unreadCount)
       }
-      console.log("Fetching notifications from:", apiUrl)
-      const response = await fetch(apiUrl, {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        credentials: "same-origin",
-        redirect: 'manual' as RequestRedirect,
-        signal,
-      })
-
-      if (!response.ok) {
-        const text = await response.text().catch(() => "")
-        console.error(
-          `Failed to fetch /api/notifications: ${response.status} ${response.statusText}`,
-          text
-        )
-        throw new Error(`Fetch failed with status ${response.status}`)
-      }
-
-      // If the server returned a redirect (e.g., 308), don't follow endlessly
-      if (response.status >= 300 && response.status < 400) {
-        console.warn('[notifications] Server responded with a redirect; aborting fetch to avoid loops', response.status, response.headers.get('location'))
-        return
-      }
-
-      // If server returned HTML (dev error page / not-found), log it for debugging
-      const contentType = response.headers.get('content-type') || ''
-      if (contentType.includes('text/html')) {
-        const text = await response.text().catch(() => '')
-        console.error('[notifications] Received HTML response for API call', { status: response.status, text: (text || '').slice(0, 1024) })
-        throw new Error('Server returned HTML for /api/notifications')
-      }
-
-      const data = await response.json()
-
-      // Merge server notifications with local cache to preserve user's local read state
-      const serverNotes: Notification[] = Array.isArray(data.notifications) ? data.notifications : []
-      let localCache: any = null
-      try {
-        const rawLocal = localStorage.getItem(CACHE_KEY)
-        if (rawLocal) localCache = JSON.parse(rawLocal)
-      } catch (e) {
-        localCache = null
-      }
-      const localNotes: Notification[] = Array.isArray(localCache?.notifications) ? localCache.notifications : []
-
-      const fallbackKey = (n: any) => `${n.message || ''}::${n.createdAt || ''}::${n.order?.id || ''}`
-      const localById = new Map<string, Notification>()
-      const localByFallback = new Map<string, Notification>()
-      localNotes.forEach((n) => {
-        if (n && n.id) localById.set(n.id, n)
-        localByFallback.set(fallbackKey(n), n)
-      })
-
-      const mergedMap: Notification[] = serverNotes.map((s) => {
-        const local = (s.id && localById.get(s.id)) || localByFallback.get(fallbackKey(s))
-        const read = local ? !!local.read : !!s.read
-        const silent = s.silent ?? false
-        return { ...s, read, silent }
-      })
-
-      // Include any local-only notifications (e.g., tmp ids from socket) not present on server
-      localNotes.forEach((ln) => {
-        if (!mergedMap.some((m: Notification) => m.id === ln.id)) {
-          mergedMap.push(ln)
-        }
-      })
-
-      // Sort by createdAt desc
-      mergedMap.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-      const finalList = mergedMap.slice(0, 50)
-      setNotifications(finalList)
-      const newUnread = finalList.filter((n) => !n.read).length
-      setUnreadCount(newUnread)
-      try { saveCache(finalList, newUnread) } catch (e) { }
-
-      // In-memory track of already notified IDs to avoid repeat beeps for the same notification
-      const newUnreadNotes = finalList.filter(n => !n.read)
-      const toNotify = newUnreadNotes.filter(n => !notifiedIdsRef.current.has(n.id) && !n.silent)
-
-      if (toNotify.length > 0) {
-        playSound()
-        setIsPulsing(true)
-        setTimeout(() => setIsPulsing(false), 3000)
-        
-        toNotify.forEach(n => {
-          notifiedIdsRef.current.add(n.id)
-          // Show toast for newly arrived notification
-          toast({
-            title: n.title,
-            description: n.message,
-            variant: "default",
-          })
-        })
-      }
-    } catch (error: any) {
-      // Abort is expected on timeout; treat separately
-      if (error?.name === 'AbortError') {
-        // Silently return on abort
-        return
-      }
-      // For network-level failures, avoid spamming console: warn only
-      if (error?.message?.includes?.('Failed to fetch')) {
-        console.warn('Network fetch failed for /api/notifications (likely server unreachable):', error?.message)
-        throw error
-      }
-      console.error("Error fetching notifications (network error):", error)
-      throw error
+    } catch (err) {
+      console.error("Error fetching notifications:", err)
     }
   }
 
+  // Initial load and Pusher Setup
   useEffect(() => {
-    // Hydrate from cache to keep notifications visible across F5 reloads
+    if (!session?.user?.id) return
+
+    // Hydrate from cache
     try {
       const raw = localStorage.getItem(CACHE_KEY)
-      console.log('[notifications] reading cache key:', CACHE_KEY, 'raw:', raw ? raw.slice(0, 200) : null)
       if (raw) {
         const parsed = JSON.parse(raw)
-        if (parsed && parsed.notifications) {
-          console.log('[notifications] cache hydrated; length:', (parsed.notifications || []).length, 'unread:', parsed.unreadCount)
-          // Initialize notifiedIds with cached unread IDs to prevent alerts on load for existing unread items
-          const cachedNotes: Notification[] = parsed.notifications || [];
-          cachedNotes.filter(n => !n.read).forEach(n => {
-            if (n.id) notifiedIdsRef.current.add(n.id)
-          });
-          
-          setNotifications(cachedNotes)
+        if (parsed?.notifications) {
+          setNotifications(parsed.notifications)
           setUnreadCount(parsed.unreadCount || 0)
+          parsed.notifications.filter((n: any) => !n.read).forEach((n: any) => notifiedIdsRef.current.add(n.id))
         }
       }
-    } catch (e) {
-      // ignore parse errors
-    }
-    // Ensure cache saved on unload/visibility changes
-    const onVisibility = () => saveCache()
-    const onBeforeUnload = () => saveCache()
-    window.addEventListener('visibilitychange', onVisibility)
-    window.addEventListener('beforeunload', onBeforeUnload)
-    let mounted = true
-    const scheduleNext = (ms: number) => {
-      if (!mounted) return
-      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = setTimeout(() => {
-        void doPoll()
-      }, ms)
-    }
+    } catch (e) {}
 
-    const doPoll = async () => {
-      if (!mounted) return
-      if (inProgressRef.current) return
-      inProgressRef.current = true
-      const abort = new AbortController()
-      const abortTimeout = setTimeout(() => abort.abort(), 8000)
-      try {
-        await fetchNotifications(abort.signal)
-        consecutiveFailsRef.current = 0
-        pollIntervalMsRef.current = 5000
-      } catch (err: any) {
-        consecutiveFailsRef.current += 1
-        // Exponential backoff on repeated failures
-        pollIntervalMsRef.current = Math.min(POLL_MAX_MS, Math.max(POLL_MIN_MS, pollIntervalMsRef.current * POLL_BACKOFF_FACTOR))
-        if (consecutiveFailsRef.current === 1) {
-          console.warn('[notifications] Polling error (first failure):', err?.message || err)
-        } else if (consecutiveFailsRef.current % 5 === 0) {
-          // Periodic summary to avoid spamming console
-          console.warn(`[notifications] Polling still failing; consecutive failures: ${consecutiveFailsRef.current}`)
-        }
-      } finally {
-        clearTimeout(abortTimeout)
-        inProgressRef.current = false
-      }
-      // If we are now connected to socket, stop the polling chain here
-      if (!isConnectedRef.current) {
-        scheduleNext(pollIntervalMsRef.current)
-      } else {
-        console.log('[notifications] Polling chain stopped because socket is connected')
-      }
-    }
+    fetchNotifications()
 
-    // Start looping
-    scheduleNext(pollIntervalMsRef.current)
+    // Subscribe to Pusher
+    const channel = pusherClient.subscribe(`user-${session.user.id}`)
+    
+    channel.bind("new-notification", (incoming: Notification) => {
+      setNotifications((prev) => {
+        if (prev.some(n => n.id === incoming.id)) return prev
+        const next = [incoming, ...prev].slice(0, 50)
+        return next
+      })
+      setUnreadCount(prev => prev + 1)
+
+      if (!incoming.silent && !notifiedIdsRef.current.has(incoming.id)) {
+        playSound()
+        setIsPulsing(true)
+        setTimeout(() => setIsPulsing(false), 3000)
+        notifiedIdsRef.current.add(incoming.id)
+        
+        toast({
+          title: incoming.title,
+          description: incoming.message,
+        })
+      }
+    })
 
     return () => {
-      mounted = false
-      // On success, ensure serverReachable true
-      if (!serverReachable) setServerReachable(true)
-      if (pollTimeoutRef.current) clearTimeout(pollTimeoutRef.current)
-      pollTimeoutRef.current = null
-      // Clear any leftover stop-timeout when unmounting
-      window.removeEventListener('visibilitychange', onVisibility)
-      window.removeEventListener('beforeunload', onBeforeUnload)
+      pusherClient.unsubscribe(`user-${session.user.id}`)
     }
-  }, [])
-
-  // Listen for real-time notifications via socket
-  useEffect(() => {
-    if (!socket || !isConnected) return
-
-    const handleNewNotification = (notificationData: any) => {
-      console.log("[notification-bell] Nova notificação recebida via socket:", notificationData)
-
-      // If socket sent the notification payload directly, add it immediately
-      // to the UI to show the badge without waiting for the polling fetch.
-      try {
-        const incoming = notificationData?.notification ? notificationData.notification : notificationData
-        console.log('[notification-bell] parsed incoming notification:', incoming)
-        if (!incoming) return
-
-        // Ignore notifications generated by this same user (actor)
-        if (incoming.actorId && session?.user?.id && incoming.actorId === session.user.id) {
-          console.log('[notification-bell] Ignoring notification created by current user (actorId match)')
-          return
-        }
-
-        // Insert into state (cache persistence is centralized below)
-        setNotifications((prev) => {
-          const derivedId = incoming.id || `tmp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
-          if (prev.some((n) => n.id === derivedId || (n.message === (incoming.message || incoming.text) && n.createdAt === (incoming.createdAt || incoming.createdAt)))) return prev
-          const shaped = {
-            id: derivedId,
-            type: incoming.type || 'INFO',
-            title: incoming.title || 'Notificação',
-            message: incoming.message || incoming.text || '',
-            read: !!incoming.read,
-            silent: !!incoming.silent,
-            createdAt: incoming.createdAt || new Date().toISOString(),
-            order: incoming.order ? { id: incoming.order.id, title: incoming.order.title } : incoming.orderId ? { id: incoming.orderId, title: '' } : undefined,
-          } as Notification
-          const next = [shaped, ...prev].slice(0, 50)
-          return next
-        })
-
-        // increment unread unless notification explicitly marked read
-        setUnreadCount((prev) => {
-          const inc = incoming.read ? 0 : 1
-          return prev + inc
-        })
-
-        // Play notification sound unless it's silent or already notified
-        const derivedId = incoming.id || `tmp-${Date.now()}`
-        if (!incoming.silent && !notifiedIdsRef.current.has(derivedId)) {
-          playSound()
-          setIsPulsing(true)
-          setTimeout(() => setIsPulsing(false), 3000)
-          notifiedIdsRef.current.add(derivedId)
-          
-          toast({
-            title: incoming.title || "Nova notificação",
-            description: incoming.message || incoming.text || "",
-          })
-        }
-      } catch (err) {
-        console.warn('[notifications] failed to insert incoming notification into state', err)
-      }
-    }
-
-    console.log('[notifications] Subscribing to socket notification events')
-    // Listen for both events (backward compatibility)
-    socket.on("notification-received", handleNewNotification)
-    socket.on("new-notification", handleNewNotification)
-
-    return () => {
-      console.log('[notifications] Unsubscribing from socket notification events')
-      socket.off("notification-received", handleNewNotification)
-      socket.off("new-notification", handleNewNotification)
-    }
-  }, [socket, isConnected])
-
-  // Stop polling when socket connects; resume polling behavior after disconnect
-  useEffect(() => {
-    if (isConnected) {
-      if (pollTimeoutRef.current) {
-        clearTimeout(pollTimeoutRef.current)
-        pollTimeoutRef.current = null
-      }
-      // Mark server as reachable when socket connects
-      setServerReachable(true)
-      consecutiveFailsRef.current = 0
-      pollIntervalMsRef.current = 5000
-      if (pollStopTimeoutRef.current) {
-        clearTimeout(pollStopTimeoutRef.current)
-        pollStopTimeoutRef.current = null
-      }
-      console.log('[notifications] Socket connected; resetting polling backoff')
-    }
-  }, [isConnected])
+  }, [session?.user?.id])
 
   // Update document title with unread count
   useEffect(() => {
