@@ -2,12 +2,11 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 import { v4 as uuidv4 } from "uuid"
 import { isValidFileType, isValidFileSize, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "@/lib/utils"
+import { supabaseAdmin } from "@/lib/supabase"
 
-// POST /api/upload - Upload file
+// POST /api/upload - Upload file to Supabase Storage
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -62,31 +61,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
     }
 
-    // Generate unique filename and ensure extension
-    const ext = path.extname(file.name) || (file.type === "image/png" ? ".png" : file.type === "image/jpeg" ? ".jpg" : ".bin")
-    const filename = `${uuidv4()}${ext}`
+    // Generate unique filename and path
+    const fileExt = file.name.split('.').pop()
+    const filename = `${uuidv4()}.${fileExt}`
+    const filePath = `${orderId}/${filename}`
     
-    // Create uploads directory if it doesn't exist - use absolute path with process.cwd()
-    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
-    const orderDir = path.join(uploadDir, orderId)
-    
-    try {
-      await mkdir(orderDir, { recursive: true })
-    } catch (err: any) {
-      console.error("Error creating directory:", err)
-      return NextResponse.json({ error: `Erro ao criar diretório de upload: ${err.message}` }, { status: 500 })
+    // Upload to Supabase Storage
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+      .from('attachments')
+      .upload(filePath, buffer, {
+        contentType: file.type,
+        upsert: false
+      })
+
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError)
+      return NextResponse.json({ error: `Erro ao fazer upload para o Storage: ${uploadError.message}` }, { status: 500 })
     }
 
-    // Save file
-    const filepath = path.join(orderDir, filename)
-    try {
-      const bytes = await file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
-      await writeFile(filepath, buffer)
-    } catch (err: any) {
-      console.error("Error writing file:", err)
-      return NextResponse.json({ error: `Erro ao salvar arquivo no disco: ${err.message}` }, { status: 500 })
-    }
+    // Get public URL
+    const { data: { publicUrl } } = supabaseAdmin.storage
+      .from('attachments')
+      .getPublicUrl(filePath)
 
     // Create attachment record
     try {
@@ -96,7 +93,7 @@ export async function POST(request: NextRequest) {
           originalName: file.name || "pasted-image",
           mimeType: file.type,
           size: file.size,
-          url: `/api/uploads/${orderId}/${filename}`,
+          url: publicUrl,
           orderId,
         },
       })
@@ -104,8 +101,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(attachment, { status: 201 })
     } catch (err: any) {
       console.error("Error creating attachment record:", err)
+      // Cleanup: delete from storage if DB record fails
+      await supabaseAdmin.storage.from('attachments').remove([filePath])
       return NextResponse.json({ error: `Erro ao registrar anexo no banco de dados: ${err.message}` }, { status: 500 })
     }
+
   } catch (error: any) {
     console.error("Critical error uploading file:", error)
     return NextResponse.json({ 
@@ -150,21 +150,26 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
     }
 
-    // Delete file from disk
-    const uploadDir = process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads")
-    const filepath = path.join(uploadDir, attachment.orderId, attachment.filename)
+    // Delete file from Supabase Storage
+    const filePath = `${attachment.orderId}/${attachment.filename}`
     
     try {
-      const fs = await import("fs/promises")
-      await fs.unlink(filepath)
-    } catch {
-      // File might not exist, continue anyway
+      const { error: deleteError } = await supabaseAdmin.storage
+        .from('attachments')
+        .remove([filePath])
+      
+      if (deleteError) {
+        console.warn("Error deleting from Supabase Storage:", deleteError)
+      }
+    } catch (err) {
+      console.error("Critical error deleting from storage:", err)
     }
 
     // Delete from database
     await prisma.attachment.delete({ where: { id: attachmentId } })
 
     return NextResponse.json({ message: "Anexo excluído com sucesso" })
+
   } catch (error) {
     console.error("Error deleting file:", error)
     return NextResponse.json({ error: "Erro ao excluir anexo" }, { status: 500 })
