@@ -272,8 +272,8 @@ export function OrderChat({ orderId, initialMessages = [], recipientUserId = nul
                   </div>
                   <div
                     className={`inline-block px-4 py-2 rounded-lg ${isOwn
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-900"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-900"
                       }`}
                   >
                     {message.content.startsWith('![image](') ? (

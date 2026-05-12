@@ -43,15 +43,15 @@ export function NotificationBell() {
   const { playSound } = useNotificationSound(true)
   const { data: session } = useSession()
   const { toast } = useToast()
-  
+
   const CACHE_KEY = 'notifications_cache_v1'
 
   const saveCache = (notes?: Notification[], unread?: number) => {
     try {
-      const payload = { 
-        notifications: notes ?? notifications, 
-        unreadCount: typeof unread === 'number' ? unread : unreadCount, 
-        ts: Date.now() 
+      const payload = {
+        notifications: notes ?? notifications,
+        unreadCount: typeof unread === 'number' ? unread : unreadCount,
+        ts: Date.now()
       }
       localStorage.setItem(CACHE_KEY, JSON.stringify(payload))
     } catch (e) {
@@ -89,13 +89,13 @@ export function NotificationBell() {
           parsed.notifications.filter((n: any) => !n.read).forEach((n: any) => notifiedIdsRef.current.add(n.id))
         }
       }
-    } catch (e) {}
+    } catch (e) { }
 
     fetchNotifications()
 
     // Subscribe to Pusher
     const channel = pusherClient.subscribe(`user-${session.user.id}`)
-    
+
     channel.bind("new-notification", (incoming: Notification) => {
       setNotifications((prev) => {
         if (prev.some(n => n.id === incoming.id)) return prev
@@ -109,7 +109,7 @@ export function NotificationBell() {
         setIsPulsing(true)
         setTimeout(() => setIsPulsing(false), 3000)
         notifiedIdsRef.current.add(incoming.id)
-        
+
         toast({
           title: incoming.title,
           description: incoming.message,
@@ -217,9 +217,9 @@ export function NotificationBell() {
             </span>
           )}
           {unreadCount > 0 && isPulsing && (
-             <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
-               {unreadCount > 9 ? "9+" : unreadCount}
-             </span>
+            <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
