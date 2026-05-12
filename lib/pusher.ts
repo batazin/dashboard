@@ -24,8 +24,16 @@ export const pusherServer = (appId && key && secret && cluster)
 /**
  * Instância para o Cliente (Browser)
  */
-export const pusherClient = (key && cluster)
+export const pusherClient = (typeof window !== 'undefined' && key && cluster)
   ? new PusherClientConstructor(key, { cluster })
-  : null as any
+  : {
+      subscribe: (channel: string) => ({
+        bind: (event: string, callback: Function) => {},
+        unbind: (event: string, callback: Function) => {},
+      }),
+      unsubscribe: (channel: string) => {},
+      bind: (event: string, callback: Function) => {},
+      unbind: (event: string, callback: Function) => {},
+    } as any
 
 
