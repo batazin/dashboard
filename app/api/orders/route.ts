@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma"
 import { orderCreateSchema } from "@/lib/validations"
 import { ZodError } from "zod"
 import { notifyProfessionalAssigned } from "@/lib/notifications"
+import { compareOrdersByStatusPriority } from "@/lib/order-sorting"
 
 const DEFAULT_TAG_COLORS: Record<string, string> = {
   "DERMA": "#FFDFEF",
@@ -116,22 +117,40 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    const [orders, total] = await Promise.all([
-      prisma.order.findMany({
+    // Status priority must be applied before pagination. Otherwise a newer
+    // WAITING_CONFIRMATION order can appear above an IN_PROGRESS order, or the
+    // two groups can be split in the wrong order across different pages.
+    const orderedOrderIds = (
+      await prisma.order.findMany({
         where,
-        include: {
-          requester: true,
-          professional: { include: { user: true } },
-          tags: true,
-          attachments: true,
-          _count: { select: { messages: true } },
-        },
-        orderBy: { createdAt: "desc" },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      prisma.order.count({ where }),
-    ])
+        select: { id: true, status: true, createdAt: true },
+      })
+    ).sort(compareOrdersByStatusPriority)
+
+    const total = orderedOrderIds.length
+    const pageIds = orderedOrderIds
+      .slice((page - 1) * limit, page * limit)
+      .map((order) => order.id)
+    const pagePosition = new Map(pageIds.map((id, index) => [id, index]))
+
+    const orders = pageIds.length
+      ? await prisma.order.findMany({
+          where: { id: { in: pageIds } },
+          include: {
+            requester: true,
+            professional: { include: { user: true } },
+            tags: true,
+            attachments: true,
+            _count: { select: { messages: true } },
+          },
+        })
+      : []
+
+    orders.sort(
+      (a, b) =>
+        (pagePosition.get(a.id) ?? Number.MAX_SAFE_INTEGER) -
+        (pagePosition.get(b.id) ?? Number.MAX_SAFE_INTEGER)
+    )
 
     console.log("Where clause:", JSON.stringify(where, null, 2))
     console.log("Orders found:", orders.length)
