@@ -75,6 +75,30 @@ describe("FileUpload Component", () => {
     expect(screen.getByText("Arquivos anexados:")).toBeInTheDocument()
   })
 
+  it("should provide an authenticated download link", () => {
+    const existingAttachments = [
+      {
+        id: "file-1",
+        originalName: "document.pdf",
+        url: "/uploads/document.pdf",
+        size: 1024,
+        mimeType: "application/pdf",
+      },
+    ]
+
+    render(
+      <FileUpload
+        orderId="order-1"
+        existingAttachments={existingAttachments}
+      />
+    )
+
+    expect(screen.getByRole("link", { name: "Baixar document.pdf" })).toHaveAttribute(
+      "href",
+      "/api/attachments/file-1/download"
+    )
+  })
+
   it("should call onRemove when delete button is clicked", async () => {
     const existingAttachments = [
       { 

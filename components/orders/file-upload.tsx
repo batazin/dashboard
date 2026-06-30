@@ -2,14 +2,22 @@
 
 import { useCallback, useState } from "react"
 import { useDropzone } from "react-dropzone"
-import { Upload, X, FileIcon, Image, FileText } from "lucide-react"
-import { cn, formatFileSize, isValidFileType, isValidFileSize, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from "@/lib/utils"
+import { Download, Upload, X, FileIcon, Image, FileText } from "lucide-react"
+import { cn, formatFileSize, isValidFileType, isValidFileSize, MAX_FILE_SIZE } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+
+interface Attachment {
+  id: string
+  originalName: string
+  mimeType: string
+  size: number
+  url: string
+}
 
 interface FileUploadProps {
   orderId?: string
-  onUploadComplete?: (attachment: any) => void
-  existingAttachments?: any[]
+  onUploadComplete?: (attachment: Attachment) => void
+  existingAttachments?: Attachment[]
   onRemove?: (attachmentId: string) => void
 }
 
@@ -132,9 +140,8 @@ export function FileUpload({ orderId, onUploadComplete, existingAttachments = []
                     <Icon className="h-5 w-5 text-gray-400" />
                     <div>
                       <a
-                        href={attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        href={`/api/attachments/${attachment.id}/download`}
+                        download={attachment.originalName}
                         className="text-sm font-medium text-indigo-600 hover:underline"
                       >
                         {attachment.originalName}
@@ -144,14 +151,28 @@ export function FileUpload({ orderId, onUploadComplete, existingAttachments = []
                       </p>
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-gray-400 hover:text-red-600"
-                    onClick={() => handleRemove(attachment.id)}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                      <a
+                        href={`/api/attachments/${attachment.id}/download`}
+                        download={attachment.originalName}
+                        aria-label={`Baixar ${attachment.originalName}`}
+                        title="Baixar arquivo"
+                      >
+                        <Download className="h-4 w-4" />
+                      </a>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-gray-400 hover:text-red-600"
+                      onClick={() => handleRemove(attachment.id)}
+                      aria-label={`Remover ${attachment.originalName}`}
+                      title="Remover arquivo"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )
             })}

@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { UrgentPriorityNotice } from "@/components/orders/urgent-priority-notice"
 import {
   Select,
   SelectContent,
@@ -74,7 +75,7 @@ export default function NewOrderPage() {
       .then((res) => res.json())
       .then((data) => {
         if (data.managedTags) {
-          setUserManagedTags(data.managedTags.map((t: any) => t.name))
+          setUserManagedTags(data.managedTags.map((tag: { name: string }) => tag.name))
         }
       })
       .catch(console.error)
@@ -308,6 +309,7 @@ export default function NewOrderPage() {
                   ))}
                 </SelectContent>
               </Select>
+              {formData.priority === "URGENT" && <UrgentPriorityNotice />}
             </div>
 
             <div className="space-y-4">
