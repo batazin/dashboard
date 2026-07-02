@@ -1,18 +1,8 @@
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import type { OrderStatus, Priority } from "@/types"
+import type { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-
-interface StatusGroupCount {
-  status: OrderStatus
-  _count: { status: number }
-}
-
-interface PriorityGroupCount {
-  priority: Priority
-  _count: { priority: number }
-}
 
 // GET /api/dashboard - Get dashboard stats
 export async function GET() {
@@ -22,7 +12,7 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 })
     }
 
-    const baseWhere: any = {}
+    const baseWhere: Prisma.OrderWhereInput = {}
 
     // Role-based filtering
     if (session.user.role === "REQUESTER") {
@@ -33,7 +23,7 @@ export async function GET() {
         where: { userId: session.user.id },
       })
       
-      const orConditions: any[] = [
+      const orConditions: Prisma.OrderWhereInput[] = [
         { requesterId: session.user.id } // Pedidos que criou
       ]
       
@@ -102,11 +92,11 @@ export async function GET() {
       cancelledOrders,
       totalProfessionals,
       availableProfessionals,
-      ordersByStatus: ordersByStatus.map((item: StatusGroupCount) => ({
+      ordersByStatus: ordersByStatus.map((item) => ({
         status: item.status,
         count: item._count.status,
       })),
-      ordersByPriority: ordersByPriority.map((item: PriorityGroupCount) => ({
+      ordersByPriority: ordersByPriority.map((item) => ({
         priority: item.priority,
         count: item._count.priority,
       })),

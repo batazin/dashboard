@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { AlertTriangle, ClipboardCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,7 @@ export function PendingConfirmationAlert({ role }: PendingConfirmationAlertProps
   const router = useRouter()
   const [orders, setOrders] = useState<PendingOrder[]>([])
   const [open, setOpen] = useState(false)
+  const dismissedForThisPageLoad = useRef(false)
 
   const checkPendingOrders = useCallback(async () => {
     if (role !== "REQUESTER") return
@@ -45,7 +46,7 @@ export function PendingConfirmationAlert({ role }: PendingConfirmationAlertProps
       }))
 
       setOrders(pendingOrders)
-      setOpen(pendingOrders.length > 0)
+      setOpen(pendingOrders.length > 0 && !dismissedForThisPageLoad.current)
     } catch (error) {
       console.error("Erro ao verificar pedidos aguardando confirmação:", error)
     }
@@ -74,12 +75,21 @@ export function PendingConfirmationAlert({ role }: PendingConfirmationAlertProps
   if (role !== "REQUESTER" || orders.length === 0) return null
 
   const goToOrder = (orderId: string) => {
+    dismissedForThisPageLoad.current = true
     setOpen(false)
     router.push(`/orders/${orderId}`)
   }
 
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) {
+      dismissedForThisPageLoad.current = true
+    }
+
+    setOpen(nextOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="border-amber-500 sm:max-w-xl">
         <DialogHeader>
           <div className="mb-2 flex items-center gap-3 text-amber-600 dark:text-amber-400">

@@ -1,7 +1,14 @@
 // Define enums locally to avoid Prisma client import issues
 export type Role = "ADMIN" | "REQUESTER" | "PROFESSIONAL"
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "URGENT"
-export type OrderStatus = "NEW" | "IN_ANALYSIS" | "IN_PROGRESS" | "WAITING_CLIENT" | "FINISHED" | "CANCELLED"
+export type OrderStatus =
+  | "NEW"
+  | "IN_ANALYSIS"
+  | "IN_PROGRESS"
+  | "WAITING_CLIENT"
+  | "WAITING_CONFIRMATION"
+  | "FINISHED"
+  | "CANCELLED"
 export type ProfessionalStatus = "AVAILABLE" | "BUSY" | "UNAVAILABLE"
 
 // Base types

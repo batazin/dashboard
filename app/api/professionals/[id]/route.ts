@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
 import { professionalUpdateSchema } from "@/lib/validations"
-import { ZodError } from 'zod'
+import { ZodError, type z } from 'zod'
 import type { Order } from "@/types"
 
 type RouteParams = { params: Promise<{ id: string }> }
@@ -61,7 +62,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = await request.json()
     console.log(`PATCH /api/professionals/${id} - request body:`, body)
 
-    let validatedData: any
+    let validatedData: z.infer<typeof professionalUpdateSchema>
     try {
       validatedData = professionalUpdateSchema.parse(body)
     } catch (err) {
@@ -90,7 +91,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
     }
 
-    const updateData: any = {}
+    const updateData: Prisma.ProfessionalUncheckedUpdateInput = {}
     if (validatedData.specialty) updateData.specialty = validatedData.specialty
     if (validatedData.skills) updateData.skills = validatedData.skills
     if (validatedData.status) updateData.status = validatedData.status
