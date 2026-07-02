@@ -30,7 +30,7 @@ export async function createNotification({
         message,
         orderId,
         silent,
-      } as any,
+      },
     })
     
     console.log(`✅ Notification created for user ${userId}: ${title}`)

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
+import type { Prisma } from "@prisma/client"
 import { authOptions } from "@/lib/auth"
 import prisma from "@/lib/prisma"
-import { orderUpdateSchema, orderFinishSchema } from "@/lib/validations"
+import { orderUpdateSchema } from "@/lib/validations"
 import { notifyProfessionalAssigned, notifyStatusChanged } from "@/lib/notifications"
 
 type RouteParams = { params: Promise<{ id: string }> }
@@ -99,14 +100,16 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     // If status is changing, create history entry
     const statusChanged = validatedData.status && validatedData.status !== existingOrder.status
 
-    const updateData: any = {
+    const updateData: Prisma.OrderUpdateInput = {
       ...(validatedData.title && { title: validatedData.title }),
       ...(validatedData.description && { description: validatedData.description }),
       ...(validatedData.priority && { priority: validatedData.priority }),
       ...(validatedData.status && { status: validatedData.status }),
       ...(validatedData.pageUrl !== undefined && { pageUrl: validatedData.pageUrl || null }),
-      ...(validatedData.professionalId !== undefined && { 
-        professionalId: validatedData.professionalId 
+      ...(validatedData.professionalId !== undefined && {
+        professional: validatedData.professionalId
+          ? { connect: { id: validatedData.professionalId } }
+          : { disconnect: true },
       }),
     }
 
@@ -122,7 +125,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Handle status history
-    if (statusChanged) {
+    if (statusChanged && validatedData.status) {
       updateData.statusHistory = {
         create: {
           fromStatus: existingOrder.status,
@@ -167,18 +170,40 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       console.error('Error notifying newly assigned professional:', err)
     }
 
-    // If status changed to WAITING_CONFIRMATION, notify the requester
-    if (statusChanged && validatedData.status === "WAITING_CONFIRMATION") {
+    // Notify the requester when another user changes the order status.
+    if (statusChanged && validatedData.status && order.requesterId !== session.user.id) {
       try {
         await notifyStatusChanged(
           order.requesterId,
           order.id,
           order.title,
-          "WAITING_CONFIRMATION",
+          validatedData.status,
           session.user.name || "Usuário"
         )
       } catch (err) {
         console.error('Error notifying status change to requester:', err)
+      }
+    }
+
+    // Notify the assigned professional when another user changes the status.
+    const professionalUserId = order.professional?.user.id
+    if (
+      statusChanged &&
+      validatedData.status &&
+      professionalUserId &&
+      professionalUserId !== session.user.id &&
+      professionalUserId !== order.requesterId
+    ) {
+      try {
+        await notifyStatusChanged(
+          professionalUserId,
+          order.id,
+          order.title,
+          validatedData.status,
+          session.user.name || "Usuário"
+        )
+      } catch (err) {
+        console.error('Error notifying assigned professional about status change:', err)
       }
     }
 
