@@ -70,6 +70,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showReassignDialog, setShowReassignDialog] = useState(false)
   const [showTagsDialog, setShowTagsDialog] = useState(false)
+  const [showPriorityDialog, setShowPriorityDialog] = useState(false)
   const [showEditDescriptionDialog, setShowEditDescriptionDialog] = useState(false)
   const [professionalsList, setProfessionalsList] = useState<any[]>([])
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string | null>(null)
@@ -89,6 +90,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     status: "",
     statusObservation: "",
   })
+  const [selectedPriority, setSelectedPriority] = useState("")
 
   const [editDescription, setEditDescription] = useState("")
 
@@ -104,6 +106,7 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       const data = await response.json()
       setOrder(data)
       setEditData({ status: data.status, statusObservation: "" })
+      setSelectedPriority(data.priority)
       setEditDescription(data.description)
     } catch (error) {
       toast({
@@ -196,6 +199,47 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     }
   }
 
+  const handlePriorityChange = async () => {
+    if (!selectedPriority || selectedPriority === order.priority) {
+      setShowPriorityDialog(false)
+      return
+    }
+
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/orders/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          priority: selectedPriority,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || "Erro ao atualizar")
+      }
+
+      const updated = await response.json()
+      setOrder(updated)
+      setSelectedPriority(updated.priority)
+      setShowPriorityDialog(false)
+
+      toast({
+        title: "Sucesso",
+        description: "Prioridade atualizada com sucesso",
+        variant: "success",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Nao foi possivel atualizar a prioridade",
+        variant: "destructive",
+      })
+    } finally {
+      setUpdating(false)
+    }
+  }
   const handleDescriptionChange = async () => {
     if (!editDescription || editDescription.length < 10) {
       toast({
@@ -405,6 +449,54 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 </DialogContent>
               </Dialog>
 
+              <Dialog open={showPriorityDialog} onOpenChange={(open) => {
+                setShowPriorityDialog(open)
+                if (open) setSelectedPriority(order.priority)
+              }}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <Edit className="h-4 w-4" />
+                    Alterar Prioridade
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Alterar Prioridade</DialogTitle>
+                    <DialogDescription>
+                      Ajuste a prioridade depois da analise do pedido.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-2">
+                    <Label>Nova Prioridade</Label>
+                    <Select
+                      value={selectedPriority}
+                      onValueChange={setSelectedPriority}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(priorityLabels).map(([key, label]) => (
+                          <SelectItem key={key} value={key}>
+                            {label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline" onClick={() => setShowPriorityDialog(false)}>
+                      Cancelar
+                    </Button>
+                    <Button
+                      onClick={handlePriorityChange}
+                      disabled={updating || !selectedPriority || selectedPriority === order.priority}
+                    >
+                      {updating ? "Salvando..." : "Salvar"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
               {canFinish && (
                 <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
                   <DialogTrigger asChild>
